@@ -114,8 +114,8 @@ export default function Home() {
           borderColor,
         }}>
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2 text-[22px] font-extrabold tracking-tight">
-            {/* Flow logo mark */}
+          <div className="flex items-center gap-0 text-[22px] font-extrabold tracking-tight">
+            {/* Flow logo mark only — no wordmark in the landing header */}
             <svg
               viewBox="0 0 64 64"
               className="h-7 w-7 flex-shrink-0"
@@ -143,7 +143,6 @@ export default function Home() {
                 <polyline points="14,-6 22,0 14,6" fill="none" />
               </g>
             </svg>
-            Reform
           </div>
           <div className="hidden md:flex items-center gap-7">
             <a href="#features" className="text-[14px] font-medium transition-colors hover:opacity-60" style={{ color: textColor }}>Features</a>
@@ -507,8 +506,8 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-8 md:grid-cols-4">
             <div>
-              <div className="flex items-center gap-2 text-[20px] font-extrabold tracking-tight" style={{ color: textColor }}>
-                {/* Flow logo mark */}
+              <div className="flex items-center gap-0 text-[20px] font-extrabold tracking-tight" style={{ color: textColor }}>
+                {/* Flow logo mark only — no wordmark in the footer */}
                 <svg
                   viewBox="0 0 64 64"
                   className="h-6 w-6 flex-shrink-0"
@@ -536,7 +535,6 @@ export default function Home() {
                     <polyline points="14,-6 22,0 14,6" fill="none" />
                   </g>
                 </svg>
-                Reform
               </div>
               <p className="mt-2 text-[12px]" style={{ color: subtextColor }}>
                 The world&apos;s most advanced dynamic form builder engine.

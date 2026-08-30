@@ -106,8 +106,35 @@ export function AppShell({
       style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}
     >
       <header className="fixed top-0 z-50 flex h-16 w-full items-center justify-between border-b border-white/10 bg-rf-surface/80 px-4 backdrop-blur-md min-[480px]:hidden sm:px-6">
-        <Link href="/dashboard" className="text-[20px] font-bold tracking-tight">
-          Reform
+        <Link href="/dashboard" className="flex items-center" aria-label="Reform">
+          {/* Flow logo mark only — no wordmark in the app header */}
+          <svg
+            viewBox="0 0 64 64"
+            className="h-8 w-8"
+            role="img"
+            aria-label="Reform Logo"
+          >
+            <defs>
+              <linearGradient id="rf-mobile-grad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#f59e0b" />
+                <stop offset="100%" stopColor="#d97706" />
+              </linearGradient>
+              <linearGradient id="rf-mobile-grad-2" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#fbbf24" />
+                <stop offset="100%" stopColor="#f59e0b" />
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#rf-mobile-grad-2)" opacity="0.45" />
+            <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#rf-mobile-grad-2)" opacity="0.75" transform="translate(2, 0)" />
+            <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#rf-mobile-grad)" transform="translate(4, 0)" />
+            <g transform="translate(32, 32)" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" fill="none">
+              <line x1="-22" y1="-10" x2="-6" y2="-10" />
+              <line x1="-22" y1="0"   x2="-6" y2="0" />
+              <line x1="-22" y1="10"  x2="-6" y2="10" />
+              <line x1="-6" y1="0" x2="20" y2="0" />
+              <polyline points="14,-6 22,0 14,6" fill="none" />
+            </g>
+          </svg>
         </Link>
         <div className="flex items-center gap-2">
           <details className="relative">
@@ -180,9 +207,6 @@ export function AppShell({
           </div>
           {!collapsed ? (
             <div>
-              <h1 className="text-[18px] font-extrabold text-rf-on-surface">
-                Reform
-              </h1>
               <p className="text-[12px] text-rf-on-surface-variant">{brandSubtitle}</p>
             </div>
           ) : null}
