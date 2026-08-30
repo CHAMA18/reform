@@ -115,6 +115,34 @@ export default function Home() {
         }}>
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2 text-[22px] font-extrabold tracking-tight">
+            {/* Flow logo mark */}
+            <svg
+              viewBox="0 0 64 64"
+              className="h-7 w-7 flex-shrink-0"
+              role="img"
+              aria-label="Reform Logo"
+            >
+              <defs>
+                <linearGradient id="rf-landing-grad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#f59e0b" />
+                  <stop offset="100%" stopColor="#d97706" />
+                </linearGradient>
+                <linearGradient id="rf-landing-grad-2" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#fbbf24" />
+                  <stop offset="100%" stopColor="#f59e0b" />
+                </linearGradient>
+              </defs>
+              <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#rf-landing-grad-2)" opacity="0.45" />
+              <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#rf-landing-grad-2)" opacity="0.75" transform="translate(2, 0)" />
+              <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#rf-landing-grad)" transform="translate(4, 0)" />
+              <g transform="translate(32, 32)" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" fill="none">
+                <line x1="-22" y1="-10" x2="-6" y2="-10" />
+                <line x1="-22" y1="0"   x2="-6" y2="0" />
+                <line x1="-22" y1="10"  x2="-6" y2="10" />
+                <line x1="-6" y1="0" x2="20" y2="0" />
+                <polyline points="14,-6 22,0 14,6" fill="none" />
+              </g>
+            </svg>
             Reform
           </div>
           <div className="hidden md:flex items-center gap-7">
@@ -479,7 +507,35 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-8 md:grid-cols-4">
             <div>
-              <div className="text-[20px] font-extrabold tracking-tight" style={{ color: textColor }}>
+              <div className="flex items-center gap-2 text-[20px] font-extrabold tracking-tight" style={{ color: textColor }}>
+                {/* Flow logo mark */}
+                <svg
+                  viewBox="0 0 64 64"
+                  className="h-6 w-6 flex-shrink-0"
+                  role="img"
+                  aria-label="Reform Logo"
+                >
+                  <defs>
+                    <linearGradient id="rf-footer-grad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#f59e0b" />
+                      <stop offset="100%" stopColor="#d97706" />
+                    </linearGradient>
+                    <linearGradient id="rf-footer-grad-2" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#fbbf24" />
+                      <stop offset="100%" stopColor="#f59e0b" />
+                    </linearGradient>
+                  </defs>
+                  <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#rf-footer-grad-2)" opacity="0.45" />
+                  <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#rf-footer-grad-2)" opacity="0.75" transform="translate(2, 0)" />
+                  <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#rf-footer-grad)" transform="translate(4, 0)" />
+                  <g transform="translate(32, 32)" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" fill="none">
+                    <line x1="-22" y1="-10" x2="-6" y2="-10" />
+                    <line x1="-22" y1="0"   x2="-6" y2="0" />
+                    <line x1="-22" y1="10"  x2="-6" y2="10" />
+                    <line x1="-6" y1="0" x2="20" y2="0" />
+                    <polyline points="14,-6 22,0 14,6" fill="none" />
+                  </g>
+                </svg>
                 Reform
               </div>
               <p className="mt-2 text-[12px]" style={{ color: subtextColor }}>

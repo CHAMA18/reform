@@ -20,7 +20,35 @@ export default function SignupPage() {
       <div className="auth-scanline" />
 
       <nav className="fixed left-0 top-0 z-50 flex h-[92px] w-full items-center justify-between border-b border-rf-border-white-faint bg-rf-glass-bg px-6 backdrop-blur-[40px]">
-        <Link href="/" className="text-[24px] font-bold tracking-tight text-rf-on-surface">
+        <Link href="/" className="flex items-center gap-2.5 text-[24px] font-bold tracking-tight text-rf-on-surface">
+          {/* Flow logo mark — three stacked amber layers + white flow arrow */}
+          <svg
+            viewBox="0 0 64 64"
+            className="h-8 w-8 flex-shrink-0"
+            role="img"
+            aria-label="Reform Logo"
+          >
+            <defs>
+              <linearGradient id="rf-signup-grad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#f59e0b" />
+                <stop offset="100%" stopColor="#d97706" />
+              </linearGradient>
+              <linearGradient id="rf-signup-grad-2" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#fbbf24" />
+                <stop offset="100%" stopColor="#f59e0b" />
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#rf-signup-grad-2)" opacity="0.45" />
+            <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#rf-signup-grad-2)" opacity="0.75" transform="translate(2, 0)" />
+            <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#rf-signup-grad)" transform="translate(4, 0)" />
+            <g transform="translate(32, 32)" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" fill="none">
+              <line x1="-22" y1="-10" x2="-6" y2="-10" />
+              <line x1="-22" y1="0"   x2="-6" y2="0" />
+              <line x1="-22" y1="10"  x2="-6" y2="10" />
+              <line x1="-6" y1="0" x2="20" y2="0" />
+              <polyline points="14,-6 22,0 14,6" fill="none" />
+            </g>
+          </svg>
           Reform
         </Link>
         <div className="flex items-center gap-3">
