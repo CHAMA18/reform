@@ -81,6 +81,17 @@ const scaleIn = (frame: number, delay = 0) => {
   return scale;
 };
 
+// Screenshot dimensions: 1280x577 (actual browser viewport)
+// We'll use objectFit: 'contain' so nothing gets cropped,
+// and size the container to match the screenshot aspect ratio.
+const SCREENSHOT_W = 1280;
+const SCREENSHOT_H = 577;
+const SCREENSHOT_ASPECT = SCREENSHOT_W / SCREENSHOT_H; // ~2.218
+
+// Container dimensions — fit within a 1280px max width while preserving aspect
+const CONTAINER_W = 1280;
+const CONTAINER_H = Math.round(CONTAINER_W / SCREENSHOT_ASPECT); // ~577
+
 // ============================================================================
 // SCENE COMPONENTS
 // ============================================================================
@@ -180,7 +191,7 @@ const SolutionScene: React.FC = () => {
     <AbsoluteFill style={{ backgroundColor: DARK_BG, justifyContent: 'center', alignItems: 'center' }}>
       {/* Flow logo animation */}
       <div style={{ transform: `scale(${titleSpring * 1.5})`, marginBottom: 40, opacity: titleSpring }}>
-        <svg viewBox="0 0 64 64" width="120" height="120">
+        <svg viewBox="-8 -8 80 80" width="120" height="120">
           <defs>
             <linearGradient id="demo-grad" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="#f59e0b" />
@@ -289,10 +300,10 @@ const ScreenShowcase: React.FC<{
         borderRadius: 16,
         overflow: 'hidden',
         boxShadow: '0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08)',
-        width: 1280,
-        height: 720,
+        width: CONTAINER_W,
+        height: CONTAINER_H,
       }}>
-        <Img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <Img src={img} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       </div>
     </AbsoluteFill>
   );
@@ -369,7 +380,7 @@ const ClosingScene: React.FC = () => {
     <AbsoluteFill style={{ backgroundColor: DARK_BG, justifyContent: 'center', alignItems: 'center' }}>
       {/* Flow logo */}
       <div style={{ transform: `scale(${logoSpring * 2})`, marginBottom: 40, opacity: logoSpring }}>
-        <svg viewBox="0 0 64 64" width="160" height="160">
+        <svg viewBox="-8 -8 80 80" width="160" height="160">
           <defs>
             <linearGradient id="close-grad" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="#f59e0b" />
