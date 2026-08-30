@@ -8,9 +8,15 @@ import { db } from '@/lib/db';
  * Uses SHA-256 password hashing (simple but functional for a prototype;
  * would use bcrypt/argon2 in production). Session tokens are 32-byte
  * random strings stored in a cookie and looked up in the Session table.
+ *
+ * Guest bypass: if the `fep_guest_id` cookie is present and no real
+ * session exists, getCurrentUser() returns a synthetic guest user —
+ * no database lookup, no async work. Clicking "Sign In As A Guest"
+ * sets the cookie and redirects in <10ms with zero Xano calls.
  */
 
 export const SESSION_COOKIE = 'fep_session';
+export const GUEST_COOKIE = 'fep_guest_id';
 export const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 /**
@@ -82,30 +88,70 @@ export async function createSession(userId: string): Promise<string> {
 }
 
 /**
+ * Build a synthetic "guest" user object. The guest is not stored in the
+ * user table — it's an in-memory identity materialised from the
+ * `fep_guest_id` cookie. Forms and submissions created by the guest
+ * will reference this ID as `owner_id`, which works because the column
+ * is a free-text field with no enforced foreign key.
+ */
+function buildGuestUser(guestId: string) {
+  // Derive a stable display name from the guest ID.
+  // Format: guest_<8hex>_<4hex> → "Guest A1B2"
+  const shortId = guestId.replace(/^guest_/, '').slice(0, 4).toUpperCase();
+  return {
+    id: guestId,
+    email: `${guestId}@guest.reform.app`,
+    name: `Guest ${shortId}`,
+    passwordHash: '', // never set — guest has no password
+    fullName: `Guest ${shortId}`,
+    orgName: 'Guest',
+    createdAt: new Date(0), // epoch — guests have no creation timestamp
+    updatedAt: new Date(0),
+    isGuest: true, // marker for code that wants to detect guests
+  };
+}
+
+/**
  * Get the current user from the session cookie.
  * Returns null if not authenticated or session expired.
+ *
+ * GUEST BYPASS: if no real session exists but the `fep_guest_id` cookie
+ * is present, returns a synthetic guest user with no database lookup.
+ * This makes "Sign In As A Guest" instant — no Xano calls on click or
+ * on subsequent page loads.
  *
  * Call this from Server Components to get the logged-in user.
  */
 export async function getCurrentUser() {
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get(SESSION_COOKIE)?.value;
-    if (!token) return null;
 
-    const session = await db.session.findUnique({
-      where: { token },
-      include: { user: true },
-    });
+    // 1. Try real session first (fast path for logged-in users)
+    const sessionToken = cookieStore.get(SESSION_COOKIE)?.value;
+    if (sessionToken) {
+      const session = await db.session.findUnique({
+        where: { token: sessionToken },
+        include: { user: true },
+      });
 
-    if (!session) return null;
-    if (session.expiresAt < new Date()) {
-      // Session expired — delete it
-      await db.session.delete({ where: { id: session.id } });
-      return null;
+      if (session) {
+        if (session.expiresAt < new Date()) {
+          // Session expired — delete it
+          await db.session.delete({ where: { id: session.id } });
+        } else {
+          return session.user;
+        }
+      }
     }
 
-    return session.user;
+    // 2. Guest bypass — check for the guest cookie. If present, return
+    //    a synthetic guest user with no database lookup.
+    const guestId = cookieStore.get(GUEST_COOKIE)?.value;
+    if (guestId && guestId.startsWith('guest_')) {
+      return buildGuestUser(guestId);
+    }
+
+    return null;
   } catch {
     return null;
   }
@@ -113,6 +159,9 @@ export async function getCurrentUser() {
 
 /**
  * Destroy the current session (logout).
+ *
+ * For guest users, this just clears the guest cookie — there's no
+ * session row to delete.
  */
 export async function destroySession(): Promise<void> {
   try {
@@ -121,6 +170,11 @@ export async function destroySession(): Promise<void> {
     if (token) {
       await db.session.deleteMany({ where: { token } }).catch(() => {});
       cookieStore.delete(SESSION_COOKIE);
+    }
+    // Also clear the guest cookie if present
+    const guestId = cookieStore.get(GUEST_COOKIE)?.value;
+    if (guestId) {
+      cookieStore.delete(GUEST_COOKIE);
     }
   } catch {
     // Not in a Server Component context

@@ -87,7 +87,7 @@ export async function GET(
     if (!form) return NextResponse.json({ error: 'Form not found' }, { status: 404 });
 
     const resp = await xanoTableOp('POST', `/workspace/${XANO_WORKSPACE_ID}/table/${ROUTING_RULE_TABLE_ID}/content/search`, {
-      filter: { form_id: formId },
+      search: { form_id: formId },
       sort: { created_at: 'desc' },
       page: 1,
       per_page: 50,

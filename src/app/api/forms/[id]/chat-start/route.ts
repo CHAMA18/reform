@@ -58,7 +58,7 @@ async function xanoTableOp(method: string, path: string, body?: unknown) {
 
 async function getConversation(sessionId: string) {
   const resp = await xanoTableOp('POST', `/workspace/${XANO_WORKSPACE_ID}/table/${CONVERSATION_TABLE_ID}/content/search`, {
-    filter: { external_id: sessionId },
+    search: { external_id: sessionId },
     page: 1,
     per_page: 1,
   });

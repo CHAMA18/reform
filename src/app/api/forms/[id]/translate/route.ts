@@ -175,13 +175,14 @@ ${JSON.stringify(stringsArray, null, 2)}`,
     }
 
     // Persist in Xano (delete any existing translation for this form+language first)
-    // Step 1: search for existing
+    // Step 1: search for existing (single-field search + in-memory filter — Xano multi-field search is broken)
     const existingSearch = await xanoTableOp('POST', `/workspace/${XANO_WORKSPACE_ID}/table/${FORM_TRANSLATION_TABLE_ID}/content/search`, {
-      filter: { form_id: formId, language: langCode },
+      search: { form_id: formId },
       page: 1,
-      per_page: 1,
+      per_page: 50,
     });
-    const existing = existingSearch?.items?.[0];
+    const existingItems = (existingSearch?.items ?? []).filter((item: any) => item.language === langCode);
+    const existing = existingItems[0];
     if (existing) {
       // Delete the old translation
       await xanoTableOp('DELETE', `/workspace/${XANO_WORKSPACE_ID}/table/${FORM_TRANSLATION_TABLE_ID}/content/${existing.id}`);
@@ -250,12 +251,14 @@ export async function GET(
     }
 
     // Return the stored translation for this form + language
+    // (single-field search + in-memory filter — Xano multi-field search is broken)
     const resp = await xanoTableOp('POST', `/workspace/${XANO_WORKSPACE_ID}/table/${FORM_TRANSLATION_TABLE_ID}/content/search`, {
-      filter: { form_id: formId, language: lang.toLowerCase() },
+      search: { form_id: formId },
       page: 1,
-      per_page: 1,
+      per_page: 50,
     });
-    const item = resp?.items?.[0];
+    const items = (resp?.items ?? []).filter((item: any) => item.language === lang.toLowerCase());
+    const item = items[0];
     if (!item) {
       return NextResponse.json({ error: 'No translation found for this language' }, { status: 404 });
     }

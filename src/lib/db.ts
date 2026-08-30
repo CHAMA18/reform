@@ -309,40 +309,102 @@ function appRecordToXano(model: ModelName, rec: Record<string, unknown>): Record
  */
 function buildFilter(model: ModelName, where: Record<string, any> | undefined): Record<string, any> | undefined {
   if (!where || Object.keys(where).length === 0) return undefined;
-  const filter: Record<string, any> = {};
+  // IMPORTANT: Xano's `search` parameter supports ONLY SINGLE-FIELD
+  // equality. Multi-field searches are silently broken — they return
+  // rows matching ANY condition (OR semantics), not all conditions.
+  // Xano's `filter` parameter is also broken — returns all rows.
+  //
+  // So: we pick ONE field to send to Xano (the first one we encounter
+  // that has a simple equality value), and the caller filters the rest
+  // in memory. See `filterInMemory` below.
   for (const [appField, rawCond] of Object.entries(where)) {
     const xanoField = appNameToXano(model, appField);
     if (rawCond && typeof rawCond === 'object' && !Array.isArray(rawCond)
-        && !(rawCond instanceof Date)
-        && Object.keys(rawCond).some(k =>
-          ['equals', 'gt', 'gte', 'lt', 'lte', 'in', 'notIn', 'contains', 'startsWith', 'endsWith', 'not', 'mode'].includes(k))) {
-      // Operator object
-      const op: Record<string, any> = {};
-      for (const [opName, opVal] of Object.entries(rawCond)) {
-        const v = opVal instanceof Date ? opVal.getTime() : opVal;
-        switch (opName) {
-          case 'equals':  op['$eq'] = v; break;
-          case 'gt':      op['$gt'] = v; break;
-          case 'gte':     op['$gte'] = v; break;
-          case 'lt':      op['$lt'] = v; break;
-          case 'lte':     op['$lte'] = v; break;
-          case 'in':      op['$in'] = v; break;
-          case 'notIn':   op['$nin'] = v; break;
-          case 'contains': op['$contains'] = v; break;
-          case 'startsWith': op['$begins'] = v; break;
-          case 'endsWith':  op['$ends'] = v; break;
-          case 'not':     op['$ne'] = v; break;
-          case 'mode':    break; // sensitivity hint; ignored
-          default:        op[opName] = v; break; // pass-through
-        }
+        && !(rawCond instanceof Date)) {
+      // Operator object — only `equals` (or single-value `in`) is supported
+      if ('equals' in rawCond) {
+        return {
+          _field: xanoField,
+          _value: rawCond.equals instanceof Date ? rawCond.equals.getTime() : rawCond.equals,
+        };
+      } else if ('in' in rawCond && Array.isArray(rawCond.in) && rawCond.in.length === 1) {
+        return { _field: xanoField, _value: rawCond.in[0] };
       }
-      filter[xanoField] = op;
+      // Other operators — skip; not supported by Xano search
     } else {
       // Direct equality
-      filter[xanoField] = rawCond instanceof Date ? rawCond.getTime() : rawCond;
+      return {
+        _field: xanoField,
+        _value: rawCond instanceof Date ? rawCond.getTime() : rawCond,
+      };
     }
   }
-  return filter;
+  return undefined;
+}
+
+/**
+ * Filter a list of records in memory by the FULL where clause.
+ * Used after a single-field Xano search to apply the remaining conditions.
+ *
+ * Supports:
+ *   - direct equality: { field: value }
+ *   - operator `equals`: { field: { equals: value } }
+ *   - operator `in`: { field: { in: [v1, v2, ...] } }
+ *   - operator `gt`, `gte`, `lt`, `lte`: numeric/date comparison
+ *   - operator `contains`: substring match (case-insensitive)
+ *   - operator `not` / `notIn`: negation
+ */
+function filterInMemory<T>(records: T[], where: Record<string, any> | undefined, model: ModelName): T[] {
+  if (!where || Object.keys(where).length === 0) return records;
+  return records.filter((rec: any) => {
+    for (const [appField, cond] of Object.entries(where)) {
+      const xanoField = appNameToXano(model, appField);
+      const actual = rec[xanoField] ?? rec[appField]; // be lenient about field name
+
+      if (cond && typeof cond === 'object' && !Array.isArray(cond) && !(cond instanceof Date)) {
+        // Operator object
+        if ('equals' in cond) {
+          const v = cond.equals instanceof Date ? cond.equals.getTime() : cond.equals;
+          if (actual !== v) return false;
+        }
+        if ('gt' in cond) {
+          const v = cond.gt instanceof Date ? cond.gt.getTime() : cond.gt;
+          if (!(actual > v)) return false;
+        }
+        if ('gte' in cond) {
+          const v = cond.gte instanceof Date ? cond.gte.getTime() : cond.gte;
+          if (!(actual >= v)) return false;
+        }
+        if ('lt' in cond) {
+          const v = cond.lt instanceof Date ? cond.lt.getTime() : cond.lt;
+          if (!(actual < v)) return false;
+        }
+        if ('lte' in cond) {
+          const v = cond.lte instanceof Date ? cond.lte.getTime() : cond.lte;
+          if (!(actual <= v)) return false;
+        }
+        if ('in' in cond && Array.isArray(cond.in)) {
+          if (!cond.in.includes(actual)) return false;
+        }
+        if ('notIn' in cond && Array.isArray(cond.notIn)) {
+          if (cond.notIn.includes(actual)) return false;
+        }
+        if ('contains' in cond) {
+          if (typeof actual !== 'string' || !actual.toLowerCase().includes(String(cond.contains).toLowerCase())) {
+            return false;
+          }
+        }
+        if ('not' in cond) {
+          if (actual === cond.not) return false;
+        }
+      } else {
+        // Direct equality
+        const v = cond instanceof Date ? cond.getTime() : cond;
+        if (actual !== v) return false;
+      }
+    }
+    return true;
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -433,11 +495,14 @@ async function attachRelationCounts(model: ModelName, record: any, countSelect: 
 async function findOne<T>(model: ModelName, args: { where: Record<string, any>; select?: Record<string, boolean>; include?: Record<string, boolean> }): Promise<T | null> {
   const tableId = TABLE_ID[model];
   const filter = buildFilter(model, args.where);
-  const body: any = { page: 1, per_page: 1 };
-  if (filter) body.filter = filter;
+  // Xano search only supports ONE field — use it as the primary filter
+  const body: any = { page: 1, per_page: 50 };
+  if (filter) body.search = { [filter._field]: filter._value };
 
   const resp = await xanoRequest('POST', `/workspace/${XANO_WORKSPACE_ID}/table/${tableId}/content/search`, body);
-  const items = resp?.items ?? [];
+  let items = resp?.items ?? [];
+  // Apply any additional where conditions in memory (Xano multi-field search is broken)
+  items = filterInMemory(items, args.where, model);
   if (items.length === 0) return null;
   const record = xanoRecordToApp<T>(model, items[0]);
   const withRelations = await includeRelations(model, record, args.include);
@@ -456,17 +521,23 @@ async function findMany<T>(model: ModelName, args: {
   const tableId = TABLE_ID[model];
   const filter = buildFilter(model, args.where);
   const sort = buildOrderBy(model, args.orderBy);
-  const page = args.skip !== undefined && args.take !== undefined
-    ? Math.floor(args.skip / args.take) + 1
-    : 1;
-  const perPage = args.take ?? 50;
+  // Fetch more than `take` because we filter in memory afterwards.
+  // Use a generous upper bound (200) so multi-field filters work.
+  const perPage = Math.max(args.take ?? 50, 200);
+  const page = 1;
 
   const body: any = { page, per_page: perPage };
-  if (filter) body.filter = filter;
+  if (filter) body.search = { [filter._field]: filter._value };
   if (sort) body.sort = sort;
 
   const resp = await xanoRequest('POST', `/workspace/${XANO_WORKSPACE_ID}/table/${tableId}/content/search`, body);
-  const items = resp?.items ?? [];
+  let items = resp?.items ?? [];
+  // Apply any additional where conditions in memory
+  items = filterInMemory(items, args.where, model);
+  // Apply skip + take in memory (since Xano pagination is now invalid
+  // after we filter in memory)
+  if (args.skip) items = items.slice(args.skip);
+  if (args.take) items = items.slice(0, args.take);
   // Attach relation counts if `_count: { select: {...} }` was requested.
   // The select shape is: { _count: { select: { submissions: true } } }
   const countSelect = (args.select?._count as any)?.select as Record<string, boolean> | undefined;
@@ -520,10 +591,11 @@ async function updateOne<T>(model: ModelName, where: Record<string, any>, data: 
   // up differently: re-fetch with the filter and ask Xano to return the int id.
   // Easiest: query the table directly via /content (not /search) and grab the id.
   const filter = buildFilter(model, where);
-  const searchResp = await xanoRequest('POST', `/workspace/${XANO_WORKSPACE_ID}/table/${TABLE_ID[model]}/content/search`, {
-    filter, page: 1, per_page: 1,
-  });
-  const xanoId = searchResp?.items?.[0]?.id;
+  const searchBody: any = { page: 1, per_page: 50 };
+  if (filter) searchBody.search = { [filter._field]: filter._value };
+  const searchResp = await xanoRequest('POST', `/workspace/${XANO_WORKSPACE_ID}/table/${TABLE_ID[model]}/content/search`, searchBody);
+  let matchingItems = filterInMemory(searchResp?.items ?? [], where, model);
+  const xanoId = matchingItems[0]?.id;
   if (!xanoId) {
     const err = new Error(`Record not found: ${JSON.stringify(where)}`);
     (err as any).code = 'P2025';
@@ -540,12 +612,13 @@ async function updateOne<T>(model: ModelName, where: Record<string, any>, data: 
 }
 
 async function deleteOne(model: ModelName, where: Record<string, any>): Promise<void> {
-  // Find the Xano int id
+  // Find the Xano int id (single-field search + in-memory filter for multi-field where)
   const filter = buildFilter(model, where);
-  const searchResp = await xanoRequest('POST', `/workspace/${XANO_WORKSPACE_ID}/table/${TABLE_ID[model]}/content/search`, {
-    filter, page: 1, per_page: 1,
-  });
-  const xanoId = searchResp?.items?.[0]?.id;
+  const searchBody: any = { page: 1, per_page: 50 };
+  if (filter) searchBody.search = { [filter._field]: filter._value };
+  const searchResp = await xanoRequest('POST', `/workspace/${XANO_WORKSPACE_ID}/table/${TABLE_ID[model]}/content/search`, searchBody);
+  const matchingItems = filterInMemory(searchResp?.items ?? [], where, model);
+  const xanoId = matchingItems[0]?.id;
   if (!xanoId) {
     // Prisma returns null if the record doesn't exist; emulate that.
     return;
@@ -558,19 +631,38 @@ async function deleteMany(model: ModelName, where: Record<string, any> | undefin
     // Refuse to delete-all in absence of a filter (matches Prisma's safe default)
     return { count: 0 };
   }
+  // Search for all matching records, then delete them one by one.
+  // (Xano's /content/search/delete endpoint ignores the `search` parameter,
+  // so we have to fetch IDs first.)
   const filter = buildFilter(model, where);
-  // Use the search+delete endpoint: POST /content/search/delete
-  const resp = await xanoRequest('POST', `/workspace/${XANO_WORKSPACE_ID}/table/${TABLE_ID[model]}/content/search/delete`, { filter });
-  return { count: resp?.affected ?? resp?.count ?? 0 };
+  const searchBody: any = { page: 1, per_page: 500 };
+  if (filter) searchBody.search = { [filter._field]: filter._value };
+  const searchResp = await xanoRequest('POST', `/workspace/${XANO_WORKSPACE_ID}/table/${TABLE_ID[model]}/content/search`, searchBody);
+  const items = filterInMemory(searchResp?.items ?? [], where, model);
+  let deleted = 0;
+  for (const item of items) {
+    if (item?.id) {
+      try {
+        await xanoRequest('DELETE', `/workspace/${XANO_WORKSPACE_ID}/table/${TABLE_ID[model]}/content/${item.id}`);
+        deleted++;
+      } catch (e) {
+        // continue deleting the rest
+      }
+    }
+  }
+  return { count: deleted };
 }
 
 async function countRecords(model: ModelName, where: Record<string, any> | undefined): Promise<number> {
-  // Xano's search endpoint returns `itemsTotal` for the matching count.
+  // Xano's search endpoint returns `itemsTotal` for the matching count,
+  // but `itemsTotal` is the count of records returned by the SINGLE-FIELD
+  // search — for multi-field filters we need to count after in-memory filtering.
   const filter = buildFilter(model, where);
-  const body: any = { page: 1, per_page: 1 };
-  if (filter) body.filter = filter;
+  const body: any = { page: 1, per_page: 500 };
+  if (filter) body.search = { [filter._field]: filter._value };
   const resp = await xanoRequest('POST', `/workspace/${XANO_WORKSPACE_ID}/table/${TABLE_ID[model]}/content/search`, body);
-  return resp?.itemsTotal ?? 0;
+  const items = filterInMemory(resp?.items ?? [], where, model);
+  return items.length;
 }
 
 // ---------------------------------------------------------------------------

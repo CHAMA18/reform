@@ -54,12 +54,14 @@ async function xanoTableOp(method: string, path: string, body?: unknown) {
 }
 
 async function getActiveRulesForForm(formId: string): Promise<RoutingRule[]> {
+  // Single-field search + in-memory filter — Xano multi-field search is broken.
   const resp = await xanoTableOp('POST', `/workspace/${XANO_WORKSPACE_ID}/table/${ROUTING_RULE_TABLE_ID}/content/search`, {
-    filter: { form_id: formId, is_active: true },
+    search: { form_id: formId },
     page: 1,
     per_page: 50,
   });
-  return (resp?.items ?? []).map((item: any) => ({
+  const items = (resp?.items ?? []).filter((item: any) => item.is_active === true || item.is_active === 'true');
+  return items.map((item: any) => ({
     id: item.external_id,
     _xano_id: item.id,
     form_id: item.form_id,
@@ -67,7 +69,7 @@ async function getActiveRulesForForm(formId: string): Promise<RoutingRule[]> {
     natural_language: item.natural_language,
     action_type: item.action_type,
     action_config: typeof item.action_config === 'string' ? JSON.parse(item.action_config) : (item.action_config ?? {}),
-    is_active: item.is_active === true || item.is_active === 'true',
+    is_active: true,
     fire_count: item.fire_count ?? 0,
   }));
 }

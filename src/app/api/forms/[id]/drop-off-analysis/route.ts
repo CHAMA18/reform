@@ -32,7 +32,7 @@ async function fetchAllEvents(formId: string) {
       Accept: 'application/json',
     },
     body: JSON.stringify({
-      filter: { form_id: formId },
+      search: { form_id: formId },
       page: 1,
       per_page: 500,
     }),

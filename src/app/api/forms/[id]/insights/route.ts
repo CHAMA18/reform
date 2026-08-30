@@ -222,7 +222,7 @@ async function fetchCachedInsight(formId: string): Promise<CachedInsight | null>
       Accept: 'application/json',
     },
     body: JSON.stringify({
-      filter: { form_id: formId },
+      search: { form_id: formId },
       sort: { generated_at: 'desc' },
       page: 1,
       per_page: 1,
