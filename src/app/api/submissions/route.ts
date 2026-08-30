@@ -96,6 +96,19 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Fire any active AI routing rules for this form.
+    // Errors here are non-fatal — the submission is already saved.
+    try {
+      const { evaluateRoutingRules } = await import('@/lib/routing-evaluator');
+      await evaluateRoutingRules({
+        formId: form.id,
+        submissionId: submission.id,
+        submissionData: data,
+      });
+    } catch (routingError) {
+      console.error('[routing] non-fatal error:', routingError);
+    }
+
     return NextResponse.json({
       id: submission.id.toISOString(),
       status: 'Live',
