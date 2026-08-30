@@ -116,7 +116,7 @@ $ spinning up node... [OK]`}
 
       <footer className="relative z-10 mx-auto flex w-full max-w-[740px] flex-col items-center justify-between gap-3 px-6 pb-4 text-center opacity-70 md:flex-row md:text-left">
         <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-rf-on-surface">
-          © 2024 Reform. Precision Infrastructure.
+          © 2026 Reform. Precision Infrastructure.
         </span>
         <div className="flex flex-wrap items-center justify-center gap-4 md:justify-end">
           <a
