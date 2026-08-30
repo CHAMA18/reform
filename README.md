@@ -48,15 +48,26 @@ A world-class form builder platform with a visual flowchart editor, dynamic vali
 
 ### 🗄️ Xano architecture (backend, not just a database)
 
-Reform uses Xano as the **backend in a meaningful way** — not just for CRUD storage:
+Reform uses Xano as the **backend in a meaningful way** — real API groups, real function stacks with business logic, a scheduled task, and Xano auth:
 
-- **11 Xano tables**: user, post, form, submission, api_key, session, ai_generation_log, form_insight, form_translation, form_routing_rule, field_event, conversation
-- **3 XanoScript function stacks** (real business logic in Xano):
+- **12 Xano tables**: user, post, form, submission, api_key, session, ai_generation_log, form_insight, form_translation, form_routing_rule, field_event, conversation
+- **6 XanoScript function stacks** with real business logic:
   - `ai/validate_and_log_form` — validates AI-generated flowcharts, logs to ai_generation_log
   - `ai/save_form_insight` — caches AI submission insights per form
   - `ai/log_field_suggestion` — generic AI audit logger (used by 7 features)
-- **Audit trail in Xano** — every AI invocation across all 10 features is logged in `ai_generation_log` (prompt, model, tokens, latency, status). Judges can query this table via the Xano metadata API to verify the architecture.
-- **Xano auth** — the `user` table is marked as Xano's auth table
+  - `ai/orchestrate_form_generation` — orchestrates form generation (start/complete lifecycle)
+  - `ai/orchestrate_insights` — fetches submissions + checks cache + logs (full orchestration)
+  - `ai/evaluate_routing` — keyword-based routing rule evaluation in XanoScript
+- **1 Xano API group** (`/api:reform/`) with 6 public REST endpoints:
+  - `GET /forms` — list user's forms
+  - `GET /forms/{id}` — get single form
+  - `GET /submissions` — list form submissions
+  - `POST /submissions` — submit form data
+  - `GET /ai/audit-log` — AI audit trail (proof all AI calls go through Xano)
+  - `GET /health` — health check
+- **1 scheduled task**: `refresh_insights` — nightly at 2am UTC, checks cached insights and marks stale ones for refresh
+- **Xano auth**: the `user` table is marked as Xano's auth table
+- **Audit trail**: every AI invocation across all 10 features is logged in `ai_generation_log` (prompt, model, tokens, latency, status). Judges can query this table via the public REST endpoint or Xano Studio.
 
 ---
 
