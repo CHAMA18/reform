@@ -9,18 +9,17 @@ services:
     healthCheckPath: /
     plan: free
     envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: reform-pg
-          property: connectionString
       - key: NODE_ENV
         value: production
+      - key: XANO_INSTANCE_API
+        value: https://xt8f-5r1j-wrmy.n7e.xano.io/api:meta
+      - key: XANO_WORKSPACE_ID
+        value: "2"
+      - key: XANO_TOKEN
+        sync: false  # set this manually in the Render dashboard — secret
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://reform.onrender.com
 
-databases:
-  - name: reform-pg
-    databaseName: reform
-    databaseUser: reform
-    plan: free
-    ipAllowList:
-      - source: 0.0.0.0/0
-        description: everywhere
+# NOTE: This blueprint uses Xano as the backend (not a Render Postgres).
+# The Xano instance + workspace + tables were provisioned at setup time
+# via the Xano metadata API. See README.md → "Xano architecture" section.
