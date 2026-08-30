@@ -386,21 +386,24 @@ function projectSelect<T>(record: T, select: Record<string, boolean> | undefined
   return out;
 }
 
-async function includeRelations(model: ModelName, record: any, include: Record<string, boolean> | undefined): Promise<any> {
+async function includeRelations(model: ModelName, record: any, include: Record<string, any> | undefined): Promise<any> {
   if (!include) return record;
   let result = { ...record };
-  // Only `session.findUnique({ include: { user: true } })` is used in the codebase
+  // session.findUnique({ include: { user: true } }) or { include: { user: { select: {...} } } }
   if (model === 'session' && include.user) {
     const userId = record.userId;
     if (userId) {
-      const user = await findOne<User>('user', { where: { id: userId } });
+      const select = (include.user === true) ? undefined : include.user.select;
+      const user = await findOne<User>('user', { where: { id: userId }, select });
       result.user = user;
     }
   }
+  // submission.findMany({ include: { form: ... } })
   if (model === 'submission' && include.form) {
     const formId = record.formId;
     if (formId) {
-      const form = await findOne<Form>('form', { where: { id: formId } });
+      const select = (include.form === true) ? undefined : include.form.select;
+      const form = await findOne<Form>('form', { where: { id: formId }, select });
       result.form = form;
     }
   }
@@ -471,6 +474,9 @@ async function findMany<T>(model: ModelName, args: {
     let record = xanoRecordToApp<T>(model, it);
     if (countSelect) {
       record = await attachRelationCounts(model, record, countSelect);
+    }
+    if (args.include) {
+      record = await includeRelations(model, record, args.include);
     }
     return record;
   }));

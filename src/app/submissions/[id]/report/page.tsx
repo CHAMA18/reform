@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
@@ -14,7 +15,9 @@ export default async function SubmissionReportPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id: submissionIdStr } = await params;
+  const { id: rawId } = await params;
+  // URL-decode in case the colons in ISO timestamps are percent-encoded
+  const submissionIdStr = decodeURIComponent(rawId);
   const user = await getCurrentUser();
   if (!user) return notFound();
 
@@ -28,7 +31,10 @@ export default async function SubmissionReportPage({
 
   // Find the submission (timestamp-based ID)
   const all = await db.submission.findMany({ take: 500 });
-  const submission = all.find((s) => s.id instanceof Date && s.id.getTime() === submissionDate.getTime());
+  const submission = all.find((s) => {
+    if (!(s.id instanceof Date)) return false;
+    return s.id.getTime() === submissionDate.getTime();
+  });
   if (!submission) return notFound();
 
   const form = await db.form.findFirst({ where: { id: submission.formId, ownerId: user.id } });

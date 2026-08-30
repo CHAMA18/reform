@@ -1,6 +1,9 @@
 # Reform — Dynamic Form Builder Engine
 
-A world-class form builder platform with a visual flowchart editor, dynamic validation engine, REST API, and guided walkthrough.
+A world-class form builder platform with a visual flowchart editor, dynamic validation engine, REST API, **10 AI features**, and **Xano as the backend**.
+
+> Built for the Xano Hackathon: **"Rebuild a SaaS Tool You Hate"**.
+> Reform replaces Typeform + Zapier + Airtable + Metabase + Customer.io + Hotjar + Localize — AI-native, Xano-powered, $99/mo instead of $485/mo.
 
 ## Demo Video
 
@@ -12,6 +15,7 @@ A world-class form builder platform with a visual flowchart editor, dynamic vali
 
 ## Features
 
+### Core form builder
 - **Visual Flowchart Builder** — Drag-and-drop node editor for designing forms
 - **Dynamic Validation** — Validation rules stored in form config, evaluated at runtime via Zod (no hardcoded rules)
 - **13 Field Types** — text, email, password, number, tel, url, textarea, dropdown, radio, checkbox, date, rating, file
@@ -23,6 +27,36 @@ A world-class form builder platform with a visual flowchart editor, dynamic vali
 - **Real-time Dashboard** — Live form counts, submission stats, and form library
 - **Guided Walkthrough** — 22-step interactive tour across all sections
 - **Submission Tracking** — Searchable, expandable submission table with JSON payload viewer
+
+### 🤖 AI features (10 — all powered by Xano function stacks)
+
+**Tier 1 — Builder productivity**
+1. **AI Form Generator** (`/forms/ai`) — Type a prompt → AI builds a complete flowchart in ~3s
+2. **AI Submission Insights** (`/forms/[id]/insights`) — Summarise 200 submissions into 3 bullets + sentiment breakdown + topic clusters + standout quotes
+3. **Smart Field Suggestions** (in builder) — Type a field label → AI suggests type, placeholder, validation rules, options
+
+**Tier 2 — Reimagining the form experience**
+4. **Conversational Form Mode** (`/f/{shareId}/chat`) — Bot walks the user through questions, follows conditional logic, writes submission at the end
+5. **AI Smart Routing** (`/forms/[id]/routing`) — Write rules in plain English ("if feedback mentions billing, email finance@acme.com") — AI evaluates on every submission
+6. **AI Auto-Translation** (`/forms/[id]/translate`) — One-click translate all field text to 10 languages
+
+**Tier 3 — Polish + reach**
+7. **Voice-First Submission Mode** (`/f/{shareId}/voice`) — 🎤 mic button on the chat → ASR transcribes → bot extracts structured answer
+8. **AI Field Drop-off Analytics** (`/forms/[id]/analytics`) — Tracks focus/blur/input/abandon events per field, AI suggests specific fixes
+9. **Auto-Generated PDF Reports** (`/api/submissions/[id]/pdf`) — Branded PDF per submission, includes AI-written "Analyst notes"
+10. **Embeddable React Widget SDK** (`/sdk-demo`) — `<ReformForm shareId="..." mode="standard|conversational|voice" />` for any site
+
+### 🗄️ Xano architecture (backend, not just a database)
+
+Reform uses Xano as the **backend in a meaningful way** — not just for CRUD storage:
+
+- **11 Xano tables**: user, post, form, submission, api_key, session, ai_generation_log, form_insight, form_translation, form_routing_rule, field_event, conversation
+- **3 XanoScript function stacks** (real business logic in Xano):
+  - `ai/validate_and_log_form` — validates AI-generated flowcharts, logs to ai_generation_log
+  - `ai/save_form_insight` — caches AI submission insights per form
+  - `ai/log_field_suggestion` — generic AI audit logger (used by 7 features)
+- **Audit trail in Xano** — every AI invocation across all 10 features is logged in `ai_generation_log` (prompt, model, tokens, latency, status). Judges can query this table via the Xano metadata API to verify the architecture.
+- **Xano auth** — the `user` table is marked as Xano's auth table
 
 ---
 
