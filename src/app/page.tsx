@@ -253,7 +253,7 @@ export default function Home() {
         <div className="mx-auto max-w-5xl">
           <div className="mb-8 text-center">
             <h2 className="text-[32px] font-extrabold tracking-tight sm:text-[40px]" style={{ color: textColor }}>
-              See Reform in action
+              See the platform in action
             </h2>
             <p className="mt-3 text-[15px]" style={{ color: subtextColor }}>
               90-second product demo — AI form generation, visual builder, submission insights, and the Xano backend.
@@ -302,7 +302,7 @@ export default function Home() {
               <Eyebrow>Capabilities</Eyebrow>
               <h2 className="text-[36px] font-extrabold tracking-tight sm:text-[48px]" style={{ color: textColor }}>Everything you need to build</h2>
               <p className="mx-auto mt-4 max-w-2xl text-[16px]" style={{ color: subtextColor }}>
-                From visual form design to API integration, Reform covers the entire lifecycle.
+                From visual form design to API integration, the platform covers the entire lifecycle.
               </p>
             </div>
           </Reveal>
@@ -595,7 +595,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t pt-6 sm:flex-row" style={{ borderColor }}>
-            <p className="text-[12px]" style={{ color: subtextColor }}>© 2026 Reform. Built with precision.</p>
+            <p className="text-[12px]" style={{ color: subtextColor }}>© 2026. Built with precision.</p>
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 animate-pulse rounded-full" style={{ background: greenStatus }} />
               <span className="text-[12px] font-medium" style={{ color: subtextColor }}>All systems operational</span>

@@ -5,14 +5,14 @@
  *
  * Story arc:
  *   0-8s   : The Problem — "Every business relies on 7 tools..."
- *   8-15s  : The Solution — "Reform. One AI-native platform."
+ *   8-15s  : The Solution — "One AI-native platform. Replaces all seven."
  *   15-25s : AI Form Generator — "Type a prompt. Get a form."
  *   25-35s : Dashboard — "Your entire form portfolio, at a glance."
  *   35-45s : Flowchart Builder — "Drag, connect, deploy."
  *   45-55s : Submissions + Insights — "AI summarises 200 submissions in 3 bullets."
  *   55-65s : API Keys + Developer Platform — "Full REST API. Programmatic access."
  *   65-75s : Xano Backend — "12 tables. 6 function stacks. 1 backend."
- *   75-90s : Closing — "Reform. $99/mo instead of $485. Built on Xano."
+ *   75-90s : Closing — "$99/mo instead of $485. Built on Xano."
  *
  * Render with:
  *   npx remotion render ReformDemo out/reform-demo.mp4
@@ -215,8 +215,8 @@ const SolutionScene: React.FC = () => {
         </svg>
       </div>
 
-      <h1 style={{ fontSize: 80, fontWeight: 900, color: WHITE, letterSpacing: '-0.03em', opacity: titleSpring, transform: `scale(${titleSpring})` }}>
-        Reform
+      <h1 style={{ fontSize: 80, fontWeight: 900, color: WHITE, letterSpacing: '-0.03em', opacity: titleSpring, transform: `scale(${titleSpring})`, height: 100 }}>
+        &nbsp;
       </h1>
 
       <p style={{ fontSize: 32, color: AMBER, marginTop: 16, opacity: subtitleOpacity, textAlign: 'center' }}>
@@ -404,8 +404,8 @@ const ClosingScene: React.FC = () => {
         </svg>
       </div>
 
-      <h1 style={{ fontSize: 80, fontWeight: 900, color: WHITE, letterSpacing: '-0.03em', opacity: logoSpring, transform: `scale(${logoSpring})` }}>
-        Reform
+      <h1 style={{ fontSize: 80, fontWeight: 900, color: WHITE, letterSpacing: '-0.03em', opacity: logoSpring, transform: `scale(${logoSpring})`, height: 100 }}>
+        &nbsp;
       </h1>
 
       <p style={{ fontSize: 32, color: AMBER, marginTop: 24, opacity: taglineOpacity, textAlign: 'center' }}>
