@@ -240,13 +240,13 @@ export function createDefaultFlowchart(): Flowchart {
       {
         id: startId,
         type: 'start',
-        position: { x: 80, y: 240 },
+        position: { x: 80, y: 280 },
         data: { label: 'Start' },
       },
       {
         id: fieldId,
         type: 'field',
-        position: { x: 360, y: 220 },
+        position: { x: 460, y: 260 },
         data: {
           label: 'Full Name',
           fieldType: 'text',
@@ -259,13 +259,13 @@ export function createDefaultFlowchart(): Flowchart {
       {
         id: submitId,
         type: 'submit',
-        position: { x: 680, y: 240 },
+        position: { x: 860, y: 280 },
         data: { label: 'Submit' },
       },
       {
         id: endId,
         type: 'end',
-        position: { x: 960, y: 240 },
+        position: { x: 1240, y: 280 },
         data: { label: 'End' },
       },
     ],

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import type { FlowNode, FlowEdge } from '@/lib/flowchart/types';
 
-const NODE_WIDTH = 200;
+const NODE_WIDTH = 240;
 const BASE_NODE_HEIGHT = 64;
 const HANDLE_OFFSET = 12; // handle extends 12px past node edge (h-6 w-6 = 24px, translate-x-1/2 = 12px)
 
@@ -220,8 +220,8 @@ export function FlowEdgeLayer({
               d={p.path}
               fill="none"
               stroke={p.color}
-              strokeWidth={isHovered ? 3 : 2}
-              strokeOpacity={isHovered ? 1 : 0.7}
+              strokeWidth={isHovered ? 4 : 2.5}
+              strokeOpacity={isHovered ? 1 : 0.8}
               markerEnd={`url(#${markerId})`}
               style={{ transition: 'stroke-width 0.15s ease, stroke-opacity 0.15s ease' }}
             />
@@ -231,9 +231,9 @@ export function FlowEdgeLayer({
               d={p.path}
               fill="none"
               stroke={p.color}
-              strokeWidth={1}
-              strokeOpacity={0.4}
-              strokeDasharray="4 8"
+              strokeWidth={1.5}
+              strokeOpacity={0.5}
+              strokeDasharray="6 10"
               style={{ animation: 'dash-flow 1.5s linear infinite' }}
             />
 

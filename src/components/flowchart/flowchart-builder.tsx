@@ -223,17 +223,36 @@ export function FlowchartBuilder() {
     };
   }, [isPanning, draggingNode, handleCanvasMouseMove, handleCanvasMouseUp]);
 
-  // Escape key cancels pending edge; Delete key removes selected node
+  // Escape key cancels pending edge; Delete key removes selected node;
+  // Cmd/Ctrl+D duplicates selected node; Cmd/Ctrl+Z undoes; Cmd/Ctrl+Shift+Z redoes
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT';
+
       if (e.key === 'Escape' && pendingEdge) {
         cancelEdge();
         setMousePos(null);
       }
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNodeId) {
-        const target = e.target as HTMLElement;
-        // Don't delete if typing in an input
-        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return;
+
+      // Cmd/Ctrl+Z = undo, Cmd/Ctrl+Shift+Z = redo
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !isTyping) {
+        e.preventDefault();
+        if (e.shiftKey) {
+          useFlowchartStore.getState().redo();
+        } else {
+          useFlowchartStore.getState().undo();
+        }
+      }
+
+      // Cmd/Ctrl+D = duplicate selected node
+      if ((e.metaKey || e.ctrlKey) && e.key === 'd' && !isTyping && selectedNodeId) {
+        e.preventDefault();
+        useFlowchartStore.getState().duplicateNode(selectedNodeId);
+      }
+
+      // Delete/Backspace removes selected node (but not start/end)
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNodeId && !isTyping) {
         const node = flowchart.nodes.find((n) => n.id === selectedNodeId);
         if (node && node.type !== 'start' && node.type !== 'end') {
           useFlowchartStore.getState().deleteNode(selectedNodeId);
@@ -420,6 +439,76 @@ export function FlowchartBuilder() {
               {flowchart.nodes.length} nodes · {flowchart.edges.length} edges
             </span>
           </div>
+
+          {/* Keyboard shortcuts hint */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 hidden items-center gap-4 rounded-lg border border-white/10 bg-rf-surface-container/90 px-4 py-1.5 backdrop-blur-xl md:flex">
+            <span className="flex items-center gap-1 text-[10px] text-rf-on-surface-variant">
+              <kbd className="rounded bg-white/5 px-1.5 py-0.5 text-[9px] font-mono">⌘D</kbd> duplicate
+            </span>
+            <span className="flex items-center gap-1 text-[10px] text-rf-on-surface-variant">
+              <kbd className="rounded bg-white/5 px-1.5 py-0.5 text-[9px] font-mono">⌘Z</kbd> undo
+            </span>
+            <span className="flex items-center gap-1 text-[10px] text-rf-on-surface-variant">
+              <kbd className="rounded bg-white/5 px-1.5 py-0.5 text-[9px] font-mono">Del</kbd> delete
+            </span>
+            <span className="flex items-center gap-1 text-[10px] text-rf-on-surface-variant">
+              <kbd className="rounded bg-white/5 px-1.5 py-0.5 text-[9px] font-mono">Scroll</kbd> zoom
+            </span>
+          </div>
+
+          {/* Minimap — small overview showing all nodes + current viewport */}
+          {flowchart.nodes.length > 0 && (
+            <div className="absolute right-4 top-4 h-32 w-48 overflow-hidden rounded-lg border border-white/10 bg-rf-surface-container/90 backdrop-blur-xl">
+              <svg viewBox="0 0 1600 600" className="h-full w-full" preserveAspectRatio="xMidYMid meet">
+                {/* Minimap background grid */}
+                <rect width="1600" height="600" fill="#0a0d14" />
+                {/* Nodes */}
+                {flowchart.nodes.map((node) => (
+                  <rect
+                    key={node.id}
+                    x={node.position.x * 0.4}
+                    y={node.position.y * 0.4}
+                    width={96}
+                    height={28}
+                    rx={6}
+                    fill={
+                      node.id === selectedNodeId
+                        ? '#f59e0b'
+                        : node.type === 'start'
+                        ? '#10b981'
+                        : node.type === 'submit'
+                        ? '#8b5cf6'
+                        : node.type === 'condition'
+                        ? '#f59e0b'
+                        : '#3b82f6'
+                    }
+                    fillOpacity={node.id === selectedNodeId ? 1 : 0.6}
+                  />
+                ))}
+                {/* Edges */}
+                {flowchart.edges.map((edge) => {
+                  const src = flowchart.nodes.find((n) => n.id === edge.source);
+                  const tgt = flowchart.nodes.find((n) => n.id === edge.target);
+                  if (!src || !tgt) return null;
+                  return (
+                    <line
+                      key={edge.id}
+                      x1={src.position.x * 0.4 + 96}
+                      y1={src.position.y * 0.4 + 14}
+                      x2={tgt.position.x * 0.4}
+                      y2={tgt.position.y * 0.4 + 14}
+                      stroke="#f59e0b"
+                      strokeWidth={1.5}
+                      strokeOpacity={0.4}
+                    />
+                  );
+                })}
+              </svg>
+              <span className="absolute bottom-1 left-2 text-[8px] font-semibold uppercase tracking-wider text-rf-on-surface-variant/60">
+                Overview
+              </span>
+            </div>
+          )}
 
           {/* Pending edge hint */}
           {pendingEdge && (
