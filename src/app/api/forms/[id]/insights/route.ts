@@ -293,11 +293,11 @@ ${JSON.stringify(submissionData, null, 2)}`;
     throw new Error(`Failed to parse LLM response as JSON: ${cleaned.slice(0, 200)}`);
   }
 
-  const tokensIn = Math.ceil((SYSTEM_PROMPT.length + userMessage.length) / 4);
-  const tokensOut = Math.ceil(content.length / 4);
+  const tokensIn = result.input_tokens;
+  const tokensOut = result.output_tokens;
 
   // Persist via Xano function stack
-  const result = await persistInsight({
+  const persisted = await persistInsight({
     formId,
     submissionCount,
     summary,
@@ -309,7 +309,7 @@ ${JSON.stringify(submissionData, null, 2)}`;
   });
 
   return {
-    id: result.insight_id,
+    id: persisted.insight_id,
     form_id: formId,
     submission_count: submissionCount,
     summary,
