@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import ZAI from 'z-ai-web-dev-sdk';
+import { aiChat } from '@/lib/ai-engine';
 import { db, runFunction } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 
@@ -272,22 +272,16 @@ async function generateInsightForForm(
 Submissions JSON:
 ${JSON.stringify(submissionData, null, 2)}`;
 
-  // Call the LLM
-  const zai = await ZAI.create();
+  // Call the AI (real LLM or rule-based fallback)
   const startTime = Date.now();
-  const completion = await zai.chat.completions.create({
-    messages: [
-      { role: 'assistant', content: SYSTEM_PROMPT },
-      { role: 'user', content: userMessage },
-    ],
-    thinking: { type: 'disabled' },
+  const result = await aiChat(SYSTEM_PROMPT, userMessage, {
     max_tokens: 1500,
     temperature: 0.4,
   });
   const elapsedMs = Date.now() - startTime;
-  const content = completion.choices?.[0]?.message?.content ?? '';
+  const content = result.content;
   if (!content) {
-    throw new Error('LLM returned an empty response');
+    throw new Error('AI returned an empty response');
   }
 
   // Clean + parse the response
@@ -307,7 +301,7 @@ ${JSON.stringify(submissionData, null, 2)}`;
     formId,
     submissionCount,
     summary,
-    model: 'glm-4.5',
+    model: result.model,
     inputTokens: tokensIn,
     outputTokens: tokensOut,
     latencyMs: elapsedMs,
@@ -319,7 +313,7 @@ ${JSON.stringify(submissionData, null, 2)}`;
     form_id: formId,
     submission_count: submissionCount,
     summary,
-    model: 'glm-4.5',
+    model: result.model,
     generated_at: new Date(),
   };
 }

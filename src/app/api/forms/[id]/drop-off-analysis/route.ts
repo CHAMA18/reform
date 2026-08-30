@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import ZAI from 'z-ai-web-dev-sdk';
+import { aiChat } from '@/lib/ai-engine';
 import { db, runFunction } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import type { Flowchart } from '@/lib/flowchart/types';
@@ -123,8 +123,7 @@ export async function GET(
       });
     }
 
-    // Call LLM to suggest fixes
-    const zai = await ZAI.create();
+    // Call AI to suggest fixes (real LLM or rule-based fallback)
     const startTime = Date.now();
     const systemPrompt = `You are a UX analyst. Given field-level event data for a form, identify drop-off points and suggest specific, actionable fixes.
 
@@ -139,17 +138,12 @@ Output ONLY the JSON array. No markdown, no commentary.`;
 Field stats JSON:
 ${JSON.stringify(fieldStats, null, 2)}`;
 
-    const completion = await zai.chat.completions.create({
-      messages: [
-        { role: 'assistant', content: systemPrompt },
-        { role: 'user', content: userMessage },
-      ],
-      thinking: { type: 'disabled' },
+    const result = await aiChat(systemPrompt, userMessage, {
       max_tokens: 1000,
       temperature: 0.4,
     });
     const elapsedMs = Date.now() - startTime;
-    const content = completion.choices?.[0]?.message?.content ?? '[]';
+    const content = result.content ?? '[]';
 
     let aiSuggestions: Array<{ fieldId: string; label: string; issue: string; recommendation: string; severity: string }> = [];
     try {

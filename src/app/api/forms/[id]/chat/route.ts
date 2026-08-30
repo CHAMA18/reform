@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import ZAI from 'z-ai-web-dev-sdk';
+import { aiChat } from '@/lib/ai-engine';
 import { db, runFunction } from '@/lib/db';
 import type { Flowchart } from '@/lib/flowchart/types';
 
@@ -143,9 +143,8 @@ async function extractFieldValue(args: {
     // Otherwise use the LLM to normalize
   }
 
-  // For dropdown/radio/checkbox — fuzzy match against options using the LLM
+  // For dropdown/radio/checkbox — fuzzy match against options using the AI
   if ((fieldType === 'dropdown' || fieldType === 'radio' || fieldType === 'checkbox') && options && options.length > 0) {
-    const zai = await ZAI.create();
     const systemPrompt = `You are an option matcher. The user is responding to a question with options. Pick the option(s) that best match their response.
 
 Output JSON: { "value": "<chosen option>" } for single-select, or { "values": ["<opt1>", "<opt2>"] } for multi-select.
@@ -158,16 +157,11 @@ Only choose from the listed options. If the user's response doesn't match any op
 
 Output ONLY the JSON. No markdown, no fences.`;
 
-    const completion = await zai.chat.completions.create({
-      messages: [
-        { role: 'assistant', content: systemPrompt },
-        { role: 'user', content: userMessage },
-      ],
-      thinking: { type: 'disabled' },
+    const result = await aiChat(systemPrompt, userMessage, {
       max_tokens: 200,
       temperature: 0,
     });
-    const content = completion.choices?.[0]?.message?.content ?? '';
+    const content = result.content;
     try {
       const cleaned = content.replace(/```json\n?/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(cleaned);
@@ -185,18 +179,11 @@ Output ONLY the JSON. No markdown, no fences.`;
 
   // For date normalization
   if (fieldType === 'date') {
-    const zai = await ZAI.create();
-    const completion = await zai.chat.completions.create({
-      messages: [
-        { role: 'assistant', content: 'Extract a date in YYYY-MM-DD format from the user message. Output ONLY the date, no other text.' },
-        { role: 'user', content: userMessage },
-      ],
-      thinking: { type: 'disabled' },
+    const result = await aiChat('Extract a date in YYYY-MM-DD format from the user message. Output ONLY the date, no other text.', userMessage, {
       max_tokens: 30,
       temperature: 0,
     });
-    const content = completion.choices?.[0]?.message?.content ?? '';
-    return content.trim();
+    return result.content.trim();
   }
 
   return userMessage.trim();

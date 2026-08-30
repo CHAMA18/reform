@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import PDFDocument from 'pdfkit';
-import ZAI from 'z-ai-web-dev-sdk';
+import { aiChat } from '@/lib/ai-engine';
 import { db, runFunction } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import type { Flowchart } from '@/lib/flowchart/types';
@@ -265,19 +265,13 @@ Write in plain prose — no markdown, no bullet points, no headers. Just 3-5 sen
 
   const userMessage = `Submission data:\n${JSON.stringify(fieldsForPrompt, null, 2)}`;
 
-  const zai = await ZAI.create();
   const startTime = Date.now();
-  const completion = await zai.chat.completions.create({
-    messages: [
-      { role: 'assistant', content: systemPrompt },
-      { role: 'user', content: userMessage },
-    ],
-    thinking: { type: 'disabled' },
+  const result = await aiChat(systemPrompt, userMessage, {
     max_tokens: 400,
     temperature: 0.4,
   });
   const elapsedMs = Date.now() - startTime;
-  const text = completion.choices?.[0]?.message?.content ?? '(no notes generated)';
+  const text = result.content || '(no notes generated)';
 
   // Audit-log via Xano
   let auditLogId = '';

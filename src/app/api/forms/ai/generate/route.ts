@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import ZAI from 'z-ai-web-dev-sdk';
+import { aiChat } from '@/lib/ai-engine';
 import { runFunction } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 
@@ -86,22 +86,15 @@ export async function POST(request: NextRequest) {
     const user = await getCurrentUser();
     const userId = user?.id ?? 'anonymous';
 
-    // 1. Invoke the LLM via z-ai-web-dev-sdk
-    const zai = await ZAI.create();
+    // 1. Invoke the AI (real LLM or rule-based fallback)
     const startTime = Date.now();
-
-    const completion = await zai.chat.completions.create({
-      messages: [
-        { role: 'assistant', content: SYSTEM_PROMPT },
-        { role: 'user', content: prompt.trim() },
-      ],
-      thinking: { type: 'disabled' },
+    const result = await aiChat(SYSTEM_PROMPT, prompt.trim(), {
       max_tokens: 2000,
       temperature: 0.7,
     });
 
     const elapsedMs = Date.now() - startTime;
-    const content = completion.choices?.[0]?.message?.content ?? '';
+    const content = result.content;
     if (!content) {
       return NextResponse.json(
         { error: 'AI returned an empty response. Please try again.' },
@@ -109,8 +102,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const tokensIn = Math.ceil((SYSTEM_PROMPT.length + prompt.length) / 4);
-    const tokensOut = Math.ceil(content.length / 4);
+    const tokensIn = result.input_tokens;
+    const tokensOut = result.output_tokens;
 
     // 2. Call Xano to validate the LLM output and log the invocation
     //    The Xano function does the schema validation (start node, submit

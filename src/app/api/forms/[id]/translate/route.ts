@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import ZAI from 'z-ai-web-dev-sdk';
+import { aiChat } from '@/lib/ai-engine';
 import { db, runFunction } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import type { Flowchart, FlowNode } from '@/lib/flowchart/types';
@@ -137,27 +137,18 @@ export async function POST(
       );
     }
 
-    // Single LLM call with all strings
+    // Single AI call with all strings (real LLM or rule-based fallback)
     const stringsArray = Array.from(stringsToTranslate);
-    const zai = await ZAI.create();
     const startTime = Date.now();
-    const completion = await zai.chat.completions.create({
-      messages: [
-        { role: 'assistant', content: SYSTEM_PROMPT },
-        {
-          role: 'user',
-          content: `Target language: ${langName} (${langCode})
+    const result = await aiChat(SYSTEM_PROMPT, `Target language: ${langName} (${langCode})
 
 Translatable strings JSON:
-${JSON.stringify(stringsArray, null, 2)}`,
-        },
-      ],
-      thinking: { type: 'disabled' },
+${JSON.stringify(stringsArray, null, 2)}`, {
       max_tokens: 2000,
       temperature: 0.3,
     });
     const elapsedMs = Date.now() - startTime;
-    const content = completion.choices?.[0]?.message?.content ?? '';
+    const content = result.content;
     if (!content) {
       return NextResponse.json({ error: 'AI returned an empty response' }, { status: 502 });
     }

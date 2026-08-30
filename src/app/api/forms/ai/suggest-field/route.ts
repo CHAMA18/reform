@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import ZAI from 'z-ai-web-dev-sdk';
+import { aiChat } from '@/lib/ai-engine';
 import { runFunction } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 
@@ -92,20 +92,14 @@ export async function POST(request: NextRequest) {
     const user = await getCurrentUser();
     const userId = user?.id ?? 'anonymous';
 
-    // 1. Call the LLM
-    const zai = await ZAI.create();
+    // 1. Call the AI (real LLM or rule-based fallback)
     const startTime = Date.now();
-    const completion = await zai.chat.completions.create({
-      messages: [
-        { role: 'assistant', content: SYSTEM_PROMPT },
-        { role: 'user', content: `Suggest configuration for a "${fieldType ?? 'text'}" field labeled: "${label.trim()}"` },
-      ],
-      thinking: { type: 'disabled' },
+    const result = await aiChat(SYSTEM_PROMPT, `Suggest configuration for a "${fieldType ?? 'text'}" field labeled: "${label.trim()}"`, {
       max_tokens: 600,
-      temperature: 0.3, // Low temperature for deterministic suggestions
+      temperature: 0.3,
     });
     const elapsedMs = Date.now() - startTime;
-    const content = completion.choices?.[0]?.message?.content ?? '';
+    const content = result.content;
     if (!content) {
       return NextResponse.json(
         { error: 'AI returned an empty response' },
@@ -113,17 +107,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const tokensIn = Math.ceil((SYSTEM_PROMPT.length + label.length) / 4);
-    const tokensOut = Math.ceil(content.length / 4);
+    const tokensIn = result.input_tokens;
+    const tokensOut = result.output_tokens;
 
     // 2. Validate + log via Xano function
-    const result = await runFunction<SuggestionResponse>(
+    const xanoResult = await runFunction<SuggestionResponse>(
       'ai/log_field_suggestion',
       {
         label: label.trim(),
         field_type: fieldType ?? 'text',
         llm_response: content,
-        model: 'glm-4.5',
+        model: result.model,
         input_tokens: tokensIn,
         output_tokens: tokensOut,
         latency_ms: elapsedMs,
@@ -132,8 +126,8 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json({
-      ...result,
-      model: 'glm-4.5',
+      ...xanoResult,
+      model: result.model,
       latency_ms: elapsedMs,
     });
   } catch (error) {
