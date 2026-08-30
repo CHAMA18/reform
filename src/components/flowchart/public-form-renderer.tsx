@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import type { GeneratedSchema, SchemaField } from '@/lib/flowchart/types';
 import { validateSubmission, isFieldVisible } from '@/lib/flowchart/validation-engine';
+import { createFieldEventTracker } from '@/lib/analytics/field-event-tracker';
 
 /**
  * PublicFormRenderer
@@ -41,6 +42,26 @@ export function PublicFormRenderer({
     [schema.fields, values]
   );
 
+  // Field-event tracker — sends focus/blur/input/abandon events to Xano
+  // for AI drop-off analysis. We use a ref to the tracker + per-field refs
+  // so we can attach listeners when each input mounts.
+  const trackerRef = useRef<ReturnType<typeof createFieldEventTracker> | null>(null);
+  const inputRefs = useRef<Map<string, HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>>(new Map());
+
+  useEffect(() => {
+    trackerRef.current = createFieldEventTracker(shareId);
+  }, [shareId]);
+
+  // Attach the tracker to each rendered input after they mount.
+  useEffect(() => {
+    if (!trackerRef.current) return;
+    for (const [fieldId, el] of inputRefs.current.entries()) {
+      trackerRef.current.attach(el, fieldId);
+    }
+    // attach() is idempotent in practice (addEventListener dedupes) so
+    // re-attaching on every visibleFields change is safe.
+  }, [visibleFields]);
+
   const setFieldValue = useCallback((fieldId: string, value: unknown) => {
     setValues((prev) => ({ ...prev, [fieldId]: value }));
     // Clear error for this field when the user edits it
@@ -60,6 +81,9 @@ export function PublicFormRenderer({
     e.preventDefault();
     setSubmitting(true);
     setSubmitError(null);
+
+    // Track submit event for analytics
+    trackerRef.current?.trackSubmit();
 
     // Client-side validation using the dynamic validation engine
     const result = validateSubmission(schema, values);
@@ -180,14 +204,27 @@ export function PublicFormRenderer({
 
         <form onSubmit={handleSubmit} className="space-y-5" noValidate>
           {visibleFields.map((field) => (
-            <FieldRenderer
+            <div
               key={field.id}
-              field={field}
-              value={values[field.id]}
-              error={touched[field.id] ? errors[field.id] : undefined}
-              onChange={(v) => setFieldValue(field.id, v)}
-              onBlur={() => handleBlur(field.id)}
-            />
+              ref={(el) => {
+                // Register the first input/select/textarea inside this div
+                // with the analytics tracker
+                if (el) {
+                  const input = el.querySelector('input, textarea, select');
+                  if (input) {
+                    inputRefs.current.set(field.id, input as HTMLInputElement);
+                  }
+                }
+              }}
+            >
+              <FieldRenderer
+                field={field}
+                value={values[field.id]}
+                error={touched[field.id] ? errors[field.id] : undefined}
+                onChange={(v) => setFieldValue(field.id, v)}
+                onBlur={() => handleBlur(field.id)}
+              />
+            </div>
           ))}
 
           {visibleFields.length === 0 && (
