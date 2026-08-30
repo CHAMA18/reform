@@ -1,34 +1,40 @@
 #!/usr/bin/env python3
 """
 Generate Reform favicon files (favicon.ico + icon-192.png + icon-512.png)
-from the brand design: amber gradient rounded rect with white "R" monogram.
+from the brand design: amber gradient stacked layers with white "Flow" mark.
+
+The "Flow" mark (logo iteration 1) consists of:
+  1. Three stacked rounded rectangles with amber gradients (back at 45%
+     opacity, middle at 75%, front at 100% — each offset 2px right)
+  2. A white flow symbol — three horizontal lines merging into a single arrow
+     (symbolising many form submissions unified into one output)
 
 Outputs:
   public/favicon.ico      — multi-resolution ICO (16, 32, 48 px)
   public/icon-192.png     — 192x192 PNG (Android/PWA)
   public/icon-512.png     — 512x512 PNG (PWA)
 """
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 import os
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), '..', 'public')
 
-# Brand colors (match public/logo.svg and the app-shell brand mark)
-AMBER_LIGHT = (245, 158, 11)   # #f59e0b
-AMBER_DARK  = (217, 119, 6)    # #d97706
-WHITE       = (255, 255, 255)
+# Brand colors
+AMBER_LIGHT  = (245, 158, 11)    # #f59e0b
+AMBER_DARK   = (217, 119, 6)     # #d97706
+AMBER_LIGHT2 = (251, 191, 36)    # #fbbf24
+WHITE        = (255, 255, 255)
 
 
-def make_gradient(size, corner_radius):
-    """Create a diagonal amber gradient with rounded corners."""
+def make_gradient(size, c1, c2, corner_radius):
+    """Create a diagonal gradient with rounded corners."""
     img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
     for y in range(size):
         for x in range(size):
-            # Diagonal interpolation: 0 at top-left, 1 at bottom-right
             t = (x + y) / (2 * size) if size > 0 else 0
-            r = int(AMBER_LIGHT[0] + (AMBER_DARK[0] - AMBER_LIGHT[0]) * t)
-            g = int(AMBER_LIGHT[1] + (AMBER_DARK[1] - AMBER_LIGHT[1]) * t)
-            b = int(AMBER_LIGHT[2] + (AMBER_DARK[2] - AMBER_LIGHT[2]) * t)
+            r = int(c1[0] + (c2[0] - c1[0]) * t)
+            g = int(c1[1] + (c2[1] - c1[1]) * t)
+            b = int(c1[2] + (c2[2] - c1[2]) * t)
             img.putpixel((x, y), (r, g, b, 255))
 
     # Round the corners using a mask
@@ -40,51 +46,88 @@ def make_gradient(size, corner_radius):
     return result
 
 
-def find_font(size):
-    """Find a usable bold sans-serif font for the R monogram."""
-    font_paths = [
-        '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
-        '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
-        '/usr/share/fonts/truetype/freefont/FreeSansBold.ttf',
-    ]
-    for p in font_paths:
-        if os.path.exists(p):
-            return ImageFont.truetype(p, size)
-    return ImageFont.load_default()
+def draw_flow_symbol(img, size):
+    """Draw the white 'flow' symbol — three lines merging into an arrow.
 
-
-def draw_monogram(img, size):
-    """Draw the white 'R' monogram centered on the image."""
+    The symbol is centered on the image. It consists of:
+      - Three horizontal lines on the left (inputs)
+      - A single horizontal line on the right (output)
+      - An arrowhead at the right end
+    """
     draw = ImageDraw.Draw(img)
-    # Font size ~62% of the icon size — a single-letter monogram looks
-    # better slightly larger than the two-letter original.
-    font_size = int(size * 0.62)
-    font = find_font(font_size)
-    text = 'R'
-    # Measure text for centering
-    try:
-        bbox = draw.textbbox((0, 0), text, font=font)
-        text_w = bbox[2] - bbox[0]
-        text_h = bbox[3] - bbox[1]
-        # textbbox returns (left, top, right, bottom); adjust for the
-        # fact that top is the ascender, not the visual top.
-        x = (size - text_w) / 2 - bbox[0]
-        y = (size - text_h) / 2 - bbox[1] - int(size * 0.04)
-    except AttributeError:
-        # Older PIL fallback
-        text_w, text_h = draw.textsize(text, font=font)
-        x = (size - text_w) / 2
-        y = (size - text_h) / 2 - int(size * 0.04)
-    draw.text((x, y), text, fill=WHITE, font=font)
+
+    # Scale factor: the SVG uses a 64x64 coordinate system.
+    # We scale everything proportionally to the actual icon size.
+    s = size / 64.0
+
+    # Line width — matches the SVG's stroke-width=3.5
+    lw = max(1, int(3.5 * s))
+
+    # The flow symbol is centered at (32, 32) in the 64x64 SVG.
+    # We translate to the icon's center.
+    cx = size / 2
+    cy = size / 2
+
+    # Three input lines on the left (y = -10, 0, +10 relative to center)
+    for dy in [-10, 0, 10]:
+        y = int(cy + dy * s)
+        x1 = int(cx - 22 * s)
+        x2 = int(cx - 6 * s)
+        draw.line([(x1, y), (x2, y)], fill=WHITE, width=lw)
+
+    # Single output line (from the merge point to the arrow base)
+    y_out = int(cy)
+    x_merge = int(cx - 6 * s)
+    x_arrow_base = int(cx + 14 * s)
+    draw.line([(x_merge, y_out), (x_arrow_base, y_out)], fill=WHITE, width=lw)
+
+    # Arrowhead — two lines forming a > shape
+    arrow_size = int(8 * s)
+    x_tip = int(cx + 22 * s)
+    # Top diagonal
+    draw.line([(x_arrow_base, int(cy - arrow_size * 0.75)),
+              (x_tip, y_out)], fill=WHITE, width=lw)
+    # Bottom diagonal
+    draw.line([(x_arrow_base, int(cy + arrow_size * 0.75)),
+              (x_tip, y_out)], fill=WHITE, width=lw)
+
+
+def draw_flow_mark(img, size):
+    """Draw the complete 'Flow' mark on the image: three stacked layers + flow symbol.
+
+    The layers are drawn with increasing opacity and a small horizontal offset,
+    creating a depth effect. The flow symbol is drawn on top in white.
+    """
+    # Scale the corner radius + offset based on icon size
+    corner_radius = max(2, int(size * 0.1875))  # 12/64 = 0.1875
+    layer_offset = max(1, int(size * 0.03125))  # 2/64 = 0.03125
+
+    # Layer 1: back (lightest gradient, 45% opacity)
+    grad_back = make_gradient(size, AMBER_LIGHT2, AMBER_LIGHT, corner_radius)
+    img.paste(grad_back, (0, 0), grad_back)
+
+    # Layer 2: middle (same gradient, 75% opacity, offset right)
+    grad_mid = make_gradient(size, AMBER_LIGHT2, AMBER_LIGHT, corner_radius)
+    # Create a semi-transparent version
+    grad_mid.putalpha(int(255 * 0.75))
+    img.paste(grad_mid, (layer_offset, 0), grad_mid)
+
+    # Layer 3: front (darker gradient, 100% opacity, further offset right)
+    grad_front = make_gradient(size, AMBER_LIGHT, AMBER_DARK, corner_radius)
+    img.paste(grad_front, (layer_offset * 2, 0), grad_front)
+
+    # Draw the flow symbol on top
+    draw_flow_symbol(img, size)
+
     return img
 
 
 def generate():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # Generate the base 512x512 image (used to derive all smaller sizes)
-    base = make_gradient(512, corner_radius=96)
-    base = draw_monogram(base, 512)
+    # Generate the base 512x512 image
+    base = Image.new('RGBA', (512, 512), (0, 0, 0, 0))
+    base = draw_flow_mark(base, 512)
 
     # Save 512x512 PNG (PWA icon)
     icon_512_path = os.path.join(OUTPUT_DIR, 'icon-512.png')
@@ -98,18 +141,11 @@ def generate():
     print(f'Wrote {icon_192_path} ({os.path.getsize(icon_192_path)} bytes)')
 
     # Generate multi-resolution ICO (16, 32, 48)
-    # PIL's ICO writer picks sizes from the `sizes` parameter and resizes
-    # the base image automatically. We pass the largest (48x48) as the
-    # main image and let PIL downscale for 16 and 32.
     sizes = [(16, 16), (32, 32), (48, 48)]
-    ico_base = make_gradient(48, corner_radius=8)
-    ico_base = draw_monogram(ico_base, 48)
+    ico_base = Image.new('RGBA', (48, 48), (0, 0, 0, 0))
+    ico_base = draw_flow_mark(ico_base, 48)
     ico_path = os.path.join(OUTPUT_DIR, 'favicon.ico')
-    ico_base.save(
-        ico_path,
-        format='ICO',
-        sizes=sizes,
-    )
+    ico_base.save(ico_path, format='ICO', sizes=sizes)
     print(f'Wrote {ico_path} ({os.path.getsize(ico_path)} bytes)')
 
     # Verify all sizes are embedded

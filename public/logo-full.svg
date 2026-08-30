@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Reform Logo — Iteration 1: "Flow"
+  Concept: Three stacked layers merging into one — symbolising many form
+  submissions being unified into a single output. The mark abstractly
+  reads as both a stack of papers and an "R" silhouette.
+
+  Palette:
+    Amber primary: #f59e0b → #d97706 (gradient)
+    Deep amber:    #92400e (rf-primary)
+    On-white text: #0c0a09 (rf-on-surface)
+
+  Usage:
+    <img src="logo-flow.svg" alt="Reform" />
+-->
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" role="img" aria-label="Reform">
+  <defs>
+    <linearGradient id="flow-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="flow-grad-2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+  </defs>
+
+  <!-- Mark: three stacked layers converging on the right -->
+  <g transform="translate(8, 8)">
+    <!-- Back layer (lightest) -->
+    <rect x="0" y="0" width="64" height="64" rx="14" fill="url(#flow-grad-2)" opacity="0.45" />
+    <!-- Middle layer -->
+    <rect x="0" y="0" width="64" height="64" rx="14" fill="url(#flow-grad-2)" opacity="0.75" transform="translate(2, 0)" />
+    <!-- Front layer (full strength) -->
+    <rect x="0" y="0" width="64" height="64" rx="14" fill="url(#flow-grad)" transform="translate(4, 0)" />
+
+    <!-- White "flow" symbol — three horizontal lines merging into a single arrow -->
+    <g transform="translate(32, 32)" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" fill="none">
+      <!-- Three input lines on the left -->
+      <line x1="-22" y1="-10" x2="-6" y2="-10" />
+      <line x1="-22" y1="0"   x2="-6" y2="0" />
+      <line x1="-22" y1="10"  x2="-6" y2="10" />
+      <!-- Single output arrow on the right -->
+      <line x1="-6" y1="0" x2="20" y2="0" />
+      <polyline points="14,-6 22,0 14,6" fill="none" />
+    </g>
+  </g>
+
+  <!-- Wordmark -->
+  <text
+    x="92"
+    y="52"
+    font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
+    font-size="32"
+    font-weight="800"
+    letter-spacing="-0.02em"
+    fill="#0c0a09">Reform</text>
+</svg>

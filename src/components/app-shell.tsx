@@ -110,7 +110,7 @@ export function AppShell({
       >
         <div className={`mb-8 flex items-center gap-4 ${collapsed ? "justify-center px-4" : "px-6"}`}>
           <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-rf-border-white-faint bg-rf-surface-variant shadow-[0_0_0_1px_rgba(255,255,255,0.02)]">
-            {/* Brand logo — amber gradient with "R" monogram */}
+            {/* Brand logo — "Flow" mark: three stacked layers merging into one */}
             <svg
               viewBox="0 0 64 64"
               className="h-full w-full"
@@ -122,19 +122,25 @@ export function AppShell({
                   <stop offset="0%" stopColor="#f59e0b" />
                   <stop offset="100%" stopColor="#d97706" />
                 </linearGradient>
+                <linearGradient id="rf-avatar-grad-2" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#fbbf24" />
+                  <stop offset="100%" stopColor="#f59e0b" />
+                </linearGradient>
               </defs>
-              <rect width="64" height="64" fill="url(#rf-avatar-grad)" rx="12" />
-              <text
-                x="32"
-                y="42"
-                textAnchor="middle"
-                fontFamily="ui-sans-serif, system-ui, sans-serif"
-                fontSize="30"
-                fontWeight="800"
-                fill="#ffffff"
-              >
-                R
-              </text>
+              {/* Back layer (lightest) */}
+              <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#rf-avatar-grad-2)" opacity="0.45" />
+              {/* Middle layer */}
+              <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#rf-avatar-grad-2)" opacity="0.75" transform="translate(2, 0)" />
+              {/* Front layer (full strength) */}
+              <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#rf-avatar-grad)" transform="translate(4, 0)" />
+              {/* White "flow" symbol — three lines merging into a single arrow */}
+              <g transform="translate(32, 32)" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" fill="none">
+                <line x1="-22" y1="-10" x2="-6" y2="-10" />
+                <line x1="-22" y1="0"   x2="-6" y2="0" />
+                <line x1="-22" y1="10"  x2="-6" y2="10" />
+                <line x1="-6" y1="0" x2="20" y2="0" />
+                <polyline points="14,-6 22,0 14,6" fill="none" />
+              </g>
             </svg>
           </div>
           {!collapsed ? (
