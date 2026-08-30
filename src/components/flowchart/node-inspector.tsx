@@ -9,6 +9,7 @@ import {
   type FlowNodeData,
 } from '@/lib/flowchart/types';
 import { ValidationRulesEditor } from '@/components/flowchart/validation-rules-editor';
+import { SmartSuggestButton } from '@/components/flowchart/smart-suggest-button';
 
 /**
  * NodeInspector
@@ -117,9 +118,19 @@ export function NodeInspector() {
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
         {/* Label — all nodes */}
         <div className="space-y-1.5">
-          <label className="text-[10px] font-semibold uppercase tracking-wider text-rf-on-surface-variant">
-            Label
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-rf-on-surface-variant">
+              Label
+            </label>
+            {/* Smart field suggestion — only for field nodes */}
+            {isField && (
+              <SmartSuggestButton
+                nodeId={node.id}
+                currentLabel={node.data.label}
+                currentFieldType={node.data.fieldType}
+              />
+            )}
+          </div>
           <input
             type="text"
             value={node.data.label}
