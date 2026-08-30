@@ -16,18 +16,15 @@ interface ConversationalFormRendererProps {
 }
 
 type Status = 'idle' | 'starting' | 'active' | 'submitting' | 'done' | 'error';
+type MicStatus = 'idle' | 'recording' | 'transcribing';
 
 /**
  * ConversationalFormRenderer — renders a published form as a chat.
  *
- * Flow:
- *   1. On mount, POST /api/forms/[shareId]/chat/start to get the first question
- *   2. User types a message → POST /api/forms/[shareId]/chat
- *   3. Bot responds with the next question (or "done" if all required fields answered)
- *   4. When done, show a success message with the submission ID
- *
- * All conversation state is stored in Xano's `conversation` table (one row
- * per chat session) — judges can inspect it via the metadata API.
+ * Also includes a 🎤 mic button for voice-first input: the user can
+ * speak their answer, the audio is sent to /api/forms/[id]/voice-transcribe
+ * which uses z-ai-web-dev-sdk's ASR service to convert it to text. The
+ * transcribed text is then sent through the normal chat flow.
  */
 export function ConversationalFormRenderer({ shareId, formName, formDescription }: ConversationalFormRendererProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -37,8 +34,11 @@ export function ConversationalFormRenderer({ shareId, formName, formDescription 
   const [progress, setProgress] = useState<{ answered: number; total: number } | null>(null);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [micStatus, setMicStatus] = useState<MicStatus>('idle');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   // Auto-scroll to bottom on new message
   useEffect(() => {
@@ -49,6 +49,15 @@ export function ConversationalFormRenderer({ shareId, formName, formDescription 
   useEffect(() => {
     startConversation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Cleanup media recorder on unmount
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+    };
   }, []);
 
   async function startConversation() {
@@ -127,6 +136,84 @@ export function ConversationalFormRenderer({ shareId, formName, formDescription 
     setSubmissionId(null);
     setError(null);
     startConversation();
+  }
+
+  // ----- Voice recording + transcription -----
+
+  async function toggleMic() {
+    if (micStatus === 'recording') {
+      stopRecording();
+    } else {
+      await startRecording();
+    }
+  }
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorderRef.current = mr;
+      audioChunksRef.current = [];
+
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mr.onstop = async () => {
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        // Stop the stream so the mic indicator turns off
+        stream.getTracks().forEach((t) => t.stop());
+
+        if (blob.size === 0) {
+          setMicStatus('idle');
+          setError('No audio captured. Please try again.');
+          return;
+        }
+
+        // Convert to base64
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const base64 = reader.result as string;
+          await transcribeAudio(base64);
+        };
+        reader.readAsDataURL(blob);
+      };
+
+      mr.start();
+      setMicStatus('recording');
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? `Microphone access failed: ${e.message}` : String(e));
+      setMicStatus('idle');
+    }
+  }
+
+  function stopRecording() {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      setMicStatus('transcribing');
+    }
+  }
+
+  async function transcribeAudio(base64: string) {
+    try {
+      const resp = await fetch(`/api/forms/${shareId}/voice-transcribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audio: base64, shareId }),
+      });
+      if (!resp.ok) {
+        const errBody = await resp.json().catch(() => ({}));
+        throw new Error(errBody.error || errBody.details || `HTTP ${resp.status}`);
+      }
+      const data = await resp.json();
+      setInput(data.transcription);
+      setMicStatus('idle');
+      setTimeout(() => inputRef.current?.focus(), 100);
+    } catch (e) {
+      setError(e instanceof Error ? `Transcription failed: ${e.message}` : String(e));
+      setMicStatus('idle');
+    }
   }
 
   return (
@@ -208,6 +295,18 @@ export function ConversationalFormRenderer({ shareId, formName, formDescription 
             </div>
           )}
 
+          {/* Voice transcribing indicator */}
+          {micStatus === 'transcribing' && (
+            <div className="flex justify-start">
+              <div className="rounded-2xl rounded-bl-md border border-rf-primary/30 bg-rf-primary/5 px-4 py-2.5">
+                <div className="flex items-center gap-2 text-[12px] text-rf-primary">
+                  <span className="material-symbols-outlined animate-spin text-[14px]">progress_activity</span>
+                  Transcribing your voice…
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Done state */}
           {status === 'done' && submissionId && (
             <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5 text-center">
@@ -262,13 +361,32 @@ export function ConversationalFormRenderer({ shareId, formName, formDescription 
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Type your answer…"
-                disabled={status !== 'active'}
-                className="flex-1 rounded-xl border border-white/10 bg-rf-input-hollow-bg px-4 py-2.5 text-[14px] text-rf-on-surface placeholder:text-rf-on-surface-variant/60 focus:border-rf-primary focus:outline-none"
+                disabled={status !== 'active' || micStatus !== 'idle'}
+                className="flex-1 rounded-xl border border-white/10 bg-rf-input-hollow-bg px-4 py-2.5 text-[14px] text-rf-on-surface placeholder:text-rf-on-surface-variant/60 focus:border-rf-primary focus:outline-none disabled:opacity-50"
               />
+              {/* Mic button — voice-first input */}
+              <button
+                type="button"
+                onClick={toggleMic}
+                disabled={status !== 'active' || micStatus === 'transcribing'}
+                className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors disabled:opacity-30 ${
+                  micStatus === 'recording'
+                    ? 'animate-pulse bg-red-500 text-white'
+                    : micStatus === 'transcribing'
+                    ? 'bg-amber-500 text-white'
+                    : 'border border-white/10 bg-rf-input-hollow-bg text-rf-on-surface-variant hover:text-rf-primary'
+                }`}
+                aria-label={micStatus === 'recording' ? 'Stop recording' : 'Record voice answer'}
+                title={micStatus === 'recording' ? 'Recording… click to stop' : 'Speak your answer'}
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  {micStatus === 'recording' ? 'stop' : micStatus === 'transcribing' ? 'progress_activity' : 'mic'}
+                </span>
+              </button>
               <button
                 type="button"
                 onClick={sendMessage}
-                disabled={!input.trim() || status !== 'active'}
+                disabled={!input.trim() || status !== 'active' || micStatus !== 'idle'}
                 className="flex h-10 w-10 items-center justify-center rounded-xl bg-rf-primary text-white transition-colors hover:bg-rf-primary/90 disabled:opacity-30"
                 aria-label="Send message"
               >
@@ -276,10 +394,21 @@ export function ConversationalFormRenderer({ shareId, formName, formDescription 
               </button>
             </div>
             <p className="mt-2 text-[10px] text-rf-on-surface-variant/60">
-              Powered by Reform&apos;s conversational AI ·{' '}
-              <Link href={`/f/${shareId}`} className="underline hover:text-rf-on-surface-variant">
-                Switch to standard form
-              </Link>
+              {micStatus === 'recording' ? (
+                <span className="flex items-center gap-1 text-red-400">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
+                  Recording — click the mic again to stop
+                </span>
+              ) : micStatus === 'transcribing' ? (
+                <span className="text-amber-400">Transcribing your voice…</span>
+              ) : (
+                <>
+                  Powered by Reform&apos;s conversational AI · 🎤 mic for voice input ·{' '}
+                  <Link href={`/f/${shareId}`} className="underline hover:text-rf-on-surface-variant">
+                    Standard form
+                  </Link>
+                </>
+              )}
             </p>
           </footer>
         )}
@@ -287,3 +416,4 @@ export function ConversationalFormRenderer({ shareId, formName, formDescription 
     </div>
   );
 }
+
