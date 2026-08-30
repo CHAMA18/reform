@@ -1,0 +1,71 @@
+# ===========================================
+# Reform — Docker Compose
+# ===========================================
+# Spins up PostgreSQL 16 + the Reform app with one command.
+#
+# Usage:
+#   docker compose up              # Start both services (foreground)
+#   docker compose up -d           # Start in background (detached)
+#   docker compose down            # Stop and remove containers
+#   docker compose down -v         # Also delete the database volume
+#   docker compose logs -f app     # Tail app logs
+#   docker compose logs -f db      # Tail database logs
+#
+# Once running:
+#   App:        http://localhost:3000
+#   Database:   localhost:5432 (user: reform, pass: reform_password, db: reform)
+#
+# The first build takes ~3-5 minutes (downloads Node, installs deps,
+# builds Next.js). Subsequent starts are instant because the layers
+# are cached.
+
+services:
+  # --- PostgreSQL 16 Database ---
+  db:
+    image: postgres:16-alpine
+    container_name: reform-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: reform
+      POSTGRES_PASSWORD: reform_password
+      POSTGRES_DB: reform
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # pg_isready returns 0 when Postgres is ready to accept connections
+      test: ["CMD-SHELL", "pg_isready -U reform -d reform"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # --- Reform Next.js App ---
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: reform-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Connect to the db service using Docker's internal DNS hostname "db"
+      DATABASE_URL: "postgresql://reform:reform_password@db:5432/reform?schema=public"
+      NODE_ENV: production
+    depends_on:
+      # Don't start the app until the DB healthcheck passes
+      db:
+        condition: service_healthy
+    # The entrypoint waits for DB, runs prisma db push, then starts the server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+    driver: local

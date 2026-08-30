@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: reform
+    env: node
+    repo: https://github.com/CHAMA18/reform
+    branch: main
+    buildCommand: bash scripts/render-build.sh
+    startCommand: bash scripts/render-start.sh
+    healthCheckPath: /
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: reform-pg
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+
+databases:
+  - name: reform-pg
+    databaseName: reform
+    databaseUser: reform
+    plan: free
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
