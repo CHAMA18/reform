@@ -62,4 +62,6 @@ postgres_data/
 /skills/
 
 # Upload screenshots (user data)
-/upload/
+/upload/.xano-token
+.xano-token
+dev.pid
