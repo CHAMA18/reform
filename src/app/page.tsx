@@ -248,6 +248,32 @@ export default function Home() {
         </div>
       </section>
 
+      {/* === Demo Video === */}
+      <section className="relative z-10 px-6 py-20" id="demo">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-8 text-center">
+            <h2 className="text-[32px] font-extrabold tracking-tight sm:text-[40px]" style={{ color: textColor }}>
+              See Reform in action
+            </h2>
+            <p className="mt-3 text-[15px]" style={{ color: subtextColor }}>
+              90-second product demo — AI form generation, visual builder, submission insights, and the Xano backend.
+            </p>
+          </div>
+          <div className="overflow-hidden rounded-2xl border shadow-2xl" style={{ borderColor, background: cardBg }}>
+            <video
+              src="/reform-demo.mp4"
+              controls
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full"
+              style={{ display: 'block' }}
+            />
+          </div>
+        </div>
+      </section>
+
       {/* === Stats Band === */}
       <section className="relative z-10 border-y" style={{ borderColor, background: secondaryBg }}>
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 px-6 py-12 md:grid-cols-4">
