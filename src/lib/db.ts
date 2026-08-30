@@ -612,5 +612,37 @@ export const db = {
   session:    makeModel<Session>('session'),
 };
 
+// ---------------------------------------------------------------------------
+// Xano function invocation — lets app code call XanoScript function stacks.
+// All AI features route through this so business logic stays in Xano.
+// ---------------------------------------------------------------------------
+
+/**
+ * Invoke a Xano function stack by name. The function must already exist in
+ * the workspace (created via the Xano metadata API or Xano Studio UI).
+ *
+ * @example
+ *   const result = await xano.runFunction('ai/generate_form', {
+ *     prompt: 'Create a 5-question NPS survey',
+ *     user_id: currentUser.id,
+ *   });
+ */
+export async function runFunction<T = any>(
+  name: string,
+  input: Record<string, any>,
+): Promise<T> {
+  const body = { name, input };
+  const resp = await xanoRequest('POST', `/workspace/${XANO_WORKSPACE_ID}/function/run`, body);
+  if (!resp || typeof resp !== 'object') {
+    throw new Error(`Xano function '${name}' failed: no response`);
+  }
+  // Xano wraps the result in { result: { status, timing, result, logs } }
+  const inner = resp.result ?? resp;
+  if (inner.status && inner.status !== 'ok') {
+    throw new Error(`Xano function '${name}' returned status=${inner.status}: ${JSON.stringify(inner)}`);
+  }
+  return (inner.result ?? inner) as T;
+}
+
 // Re-export auth helpers that some callsites expect from @/lib/db
 export { hashPassword, verifyPassword, generateSessionToken } from './auth';

@@ -15,6 +15,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { href: "/dashboard", icon: "dashboard", label: "Dashboard" },
+  { href: "/forms/ai", icon: "auto_awesome", label: "AI Generator" },
   { href: "/templates", icon: "description", label: "Form Templates" },
   { href: "/submissions", icon: "inbox", label: "Submissions" },
   { href: "/api-keys", icon: "key", label: "API Keys" },
