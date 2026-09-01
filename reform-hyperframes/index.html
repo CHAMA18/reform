@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>Reform — The Future of Forms</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: #0c0a09;
+      font-family: 'Inter', sans-serif;
+      color: #ffffff;
+    }
+
+    /* ============================================================================
+       STAGE — Main composition container
+       ============================================================================ */
+    #stage {
+      width: 1920px;
+      height: 1080px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ============================================================================
+       SCENES — Each scene is absolutely positioned
+       ============================================================================ */
+    .scene {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+    }
+
+    /* ============================================================================
+       TYPOGRAPHY
+       ============================================================================ */
+    .hero-text {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 80px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      text-align: center;
+    }
+
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 56px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      text-align: center;
+    }
+
+    .subtitle {
+      font-family: 'Inter', sans-serif;
+      font-size: 28px;
+      font-weight: 500;
+      color: #a8a29e;
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    .label {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #f59e0b;
+    }
+
+    /* ============================================================================
+       REFORM LOGO
+       ============================================================================ */
+    .logo-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .logo-mark {
+      width: 160px;
+      height: 160px;
+    }
+
+    /* ============================================================================
+       TOOL CARDS (The Problem scene)
+       ============================================================================ */
+    .tools-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 600px;
+    }
+
+    .tool-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 40px;
+      background: #1c1917;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+
+    .tool-card.from-right {
+      transform: translateX(100%);
+    }
+
+    .tool-name {
+      font-size: 24px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .tool-cost {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ef4444;
+    }
+
+    .tool-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ef4444;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+      margin-right: 16px;
+    }
+
+    /* ============================================================================
+       COST DISPLAY
+       ============================================================================ */
+    .cost-display {
+      text-align: center;
+      margin-top: 60px;
+    }
+
+    .cost-old {
+      font-size: 120px;
+      font-weight: 900;
+      color: #ef4444;
+      position: relative;
+      display: inline-block;
+    }
+
+    .cost-old::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: #ef4444;
+      transform: translateY(-50%) rotate(-3deg);
+    }
+
+    .cost-new {
+      font-size: 140px;
+      font-weight: 900;
+      color: #f59e0b;
+      text-shadow: 0 0 60px rgba(245, 158, 11, 0.4);
+    }
+
+    .cost-suffix {
+      font-size: 36px;
+      color: #a8a29e;
+      margin-left: 16px;
+    }
+
+    /* ============================================================================
+       STATS ROW
+       ============================================================================ */
+    .stats-row {
+      display: flex;
+      gap: 80px;
+      margin-top: 80px;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 64px;
+      font-weight: 700;
+      color: #f59e0b;
+    }
+
+    .stat-label {
+      font-size: 18px;
+      color: #a8a29e;
+      margin-top: 8px;
+    }
+
+    /* ============================================================================
+       ARCHITECTURE GRID
+       ============================================================================ */
+    .arch-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      width: 900px;
+      margin-top: 60px;
+    }
+
+    .arch-card {
+      background: #1c1917;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      transform: scale(0.8);
+      opacity: 0;
+    }
+
+    .arch-icon {
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 12px;
+    }
+
+    .arch-label {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .arch-desc {
+      font-size: 14px;
+      color: #a8a29e;
+    }
+
+    /* ============================================================================
+       CLOSING
+       ============================================================================ */
+    .closing-url {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px;
+      color: #a8a29e;
+      padding: 12px 32px;
+      background: #1c1917;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      margin-top: 48px;
+    }
+
+    .xano-badge {
+      font-size: 16px;
+      font-weight: 700;
+      color: #92400e;
+      background: rgba(245, 158, 11, 0.1);
+      padding: 10px 28px;
+      border-radius: 999px;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      margin-top: 24px;
+    }
+
+    /* ============================================================================
+       PARTICLES
+       ============================================================================ */
+    .particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: #f59e0b;
+    }
+
+    /* ============================================================================
+       FILM GRAIN
+       ============================================================================ */
+    .film-grain {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    /* ============================================================================
+       LOWER THIRD
+       ============================================================================ */
+    .lower-third {
+      position: absolute;
+      bottom: 80px;
+      left: 80px;
+      opacity: 0;
+    }
+
+    .lower-third-bar {
+      width: 0;
+      height: 3px;
+      background: #f59e0b;
+      margin-bottom: 12px;
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+    }
+
+    .lower-third-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .lower-third-subtitle {
+      font-size: 16px;
+      color: #a8a29e;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <!-- Film grain overlay -->
+    <div class="film-grain"></div>
+
+    <!-- ============================================================================
+         SCENE 1: THE VOID (0-5s)
+         ============================================================================ -->
+    <div class="scene" id="scene-void" data-start="0" data-duration="5">
+      <div class="logo-container">
+        <svg class="logo-mark" viewBox="-8 -8 80 80">
+          <defs>
+            <linearGradient id="grad1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#f59e0b" />
+              <stop offset="100%" stop-color="#d97706" />
+            </linearGradient>
+            <linearGradient id="grad2" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#fbbf24" />
+              <stop offset="100%" stop-color="#f59e0b" />
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#grad2)" opacity="0.45" />
+          <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#grad2)" opacity="0.75" transform="translate(2, 0)" />
+          <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#grad1)" transform="translate(4, 0)" />
+          <g transform="translate(32, 32)" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" fill="none">
+            <line x1="-22" y1="-10" x2="-6" y2="-10" />
+            <line x1="-22" y1="0" x2="-6" y2="0" />
+            <line x1="-22" y1="10" x2="-6" y2="10" />
+            <line x1="-6" y1="0" x2="20" y2="0" />
+            <polyline points="14,-6 22,0 14,6" fill="none" />
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- ============================================================================
+         SCENE 2: THE CHAOS (5-15s)
+         ============================================================================ -->
+    <div class="scene" id="scene-chaos" data-start="5" data-duration="10">
+      <div class="label" style="margin-bottom: 40px;">THE PROBLEM</div>
+      <h1 class="section-title" style="margin-bottom: 48px;">
+        Every business relies on <span style="color: #ef4444;">7 different tools</span>
+      </h1>
+
+      <div class="tools-grid">
+        <div class="tool-card from-left" id="tool-1">
+          <div style="display: flex; align-items: center;">
+            <div class="tool-dot"></div>
+            <span class="tool-name">Typeform</span>
+          </div>
+          <span class="tool-cost">$99/mo</span>
+        </div>
+        <div class="tool-card from-right" id="tool-2">
+          <div style="display: flex; align-items: center;">
+            <div class="tool-dot"></div>
+            <span class="tool-name">Zapier</span>
+          </div>
+          <span class="tool-cost">$49/mo</span>
+        </div>
+        <div class="tool-card from-left" id="tool-3">
+          <div style="display: flex; align-items: center;">
+            <div class="tool-dot"></div>
+            <span class="tool-name">Airtable</span>
+          </div>
+          <span class="tool-cost">$20/mo</span>
+        </div>
+        <div class="tool-card from-right" id="tool-4">
+          <div style="display: flex; align-items: center;">
+            <div class="tool-dot"></div>
+            <span class="tool-name">Metabase</span>
+          </div>
+          <span class="tool-cost">$85/mo</span>
+        </div>
+        <div class="tool-card from-left" id="tool-5">
+          <div style="display: flex; align-items: center;">
+            <div class="tool-dot"></div>
+            <span class="tool-name">Customer.io</span>
+          </div>
+          <span class="tool-cost">$150/mo</span>
+        </div>
+        <div class="tool-card from-right" id="tool-6">
+          <div style="display: flex; align-items: center;">
+            <div class="tool-dot"></div>
+            <span class="tool-name">Hotjar</span>
+          </div>
+          <span class="tool-cost">$32/mo</span>
+        </div>
+        <div class="tool-card from-left" id="tool-7">
+          <div style="display: flex; align-items: center;">
+            <div class="tool-dot"></div>
+            <span class="tool-name">Localize</span>
+          </div>
+          <span class="tool-cost">$50/mo</span>
+        </div>
+      </div>
+
+      <!-- Total cost -->
+      <div class="cost-display" id="total-cost" style="opacity: 0;">
+        <span style="font-size: 28px; color: #a8a29e; font-weight: 700;">Total: </span>
+        <span class="cost-old">$485</span>
+        <span class="cost-suffix">/mo</span>
+      </div>
+
+      <!-- Lower third -->
+      <div class="lower-third" id="lt-chaos">
+        <div class="lower-third-bar"></div>
+        <div class="lower-third-title">The fragmentation problem</div>
+        <div class="lower-third-subtitle">7 subscriptions. 7 dashboards. 1 broken workflow.</div>
+      </div>
+    </div>
+
+    <!-- ============================================================================
+         SCENE 3: THE VISION (15-25s)
+         ============================================================================ -->
+    <div class="scene" id="scene-vision" data-start="15" data-duration="10">
+      <p style="font-size: 36px; color: #a8a29e; font-style: italic; margin-bottom: 16px;">What if</p>
+      <h1 class="hero-text" style="margin-bottom: 48px;">
+        one platform could replace them all?
+      </h1>
+
+      <div class="logo-container" id="vision-logo" style="opacity: 0;">
+        <svg class="logo-mark" viewBox="-8 -8 80 80" width="120" height="120">
+          <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#grad2)" opacity="0.45" />
+          <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#grad2)" opacity="0.75" transform="translate(2, 0)" />
+          <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#grad1)" transform="translate(4, 0)" />
+          <g transform="translate(32, 32)" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" fill="none">
+            <line x1="-22" y1="-10" x2="-6" y2="-10" />
+            <line x1="-22" y1="0" x2="-6" y2="0" />
+            <line x1="-22" y1="10" x2="-6" y2="10" />
+            <line x1="-6" y1="0" x2="20" y2="0" />
+            <polyline points="14,-6 22,0 14,6" fill="none" />
+          </g>
+        </svg>
+      </div>
+
+      <h1 class="hero-text" style="color: #f59e0b; margin-top: 32px; opacity: 0;" id="vision-title">
+        Introducing Reform
+      </h1>
+
+      <p class="subtitle" style="opacity: 0;" id="vision-subtitle">
+        10 AI features. One AI-native platform.
+      </p>
+    </div>
+
+    <!-- ============================================================================
+         SCENE 4: THE IMPACT (25-35s)
+         ============================================================================ -->
+    <div class="scene" id="scene-impact" data-start="25" data-duration="10">
+      <div class="label" style="margin-bottom: 40px;">THE IMPACT</div>
+      <h1 class="section-title" style="margin-bottom: 60px;">
+        The numbers speak for themselves
+      </h1>
+
+      <div class="cost-display">
+        <div style="opacity: 0;" id="impact-old">
+          <span class="cost-old">$485</span>
+          <span class="cost-suffix">/mo</span>
+        </div>
+        <div style="font-size: 56px; color: #f59e0b; margin: 20px 0; opacity: 0;" id="impact-arrow">↓</div>
+        <div style="opacity: 0; transform: scale(0.8);" id="impact-new">
+          <span class="cost-new">$99</span>
+          <span class="cost-suffix">/mo</span>
+        </div>
+      </div>
+
+      <div class="stats-row" id="stats-row" style="opacity: 0;">
+        <div class="stat">
+          <div class="stat-value">7</div>
+          <div class="stat-label">tools replaced</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">10</div>
+          <div class="stat-label">AI features</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">79%</div>
+          <div class="stat-label">cost savings</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">1</div>
+          <div class="stat-label">platform</div>
+        </div>
+      </div>
+
+      <!-- Lower third -->
+      <div class="lower-third" id="lt-impact">
+        <div class="lower-third-bar"></div>
+        <div class="lower-third-title">$485 → $99 per month</div>
+        <div class="lower-third-subtitle">79% savings. Same functionality. Better AI.</div>
+      </div>
+    </div>
+
+    <!-- ============================================================================
+         SCENE 5: THE FOUNDATION (35-45s)
+         ============================================================================ -->
+    <div class="scene" id="scene-foundation" data-start="35" data-duration="10">
+      <div class="label" style="margin-bottom: 40px;">⚡ THE ENGINE</div>
+      <h1 class="section-title" style="margin-bottom: 20px;">
+        The brain behind the beauty
+      </h1>
+
+      <div class="arch-grid">
+        <div class="arch-card" id="arch-1">
+          <svg class="arch-icon" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+            <ellipse cx="12" cy="5" rx="9" ry="3" />
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+          </svg>
+          <div class="arch-label">12 Tables</div>
+          <div class="arch-desc">Full relational schema</div>
+        </div>
+        <div class="arch-card" id="arch-2">
+          <svg class="arch-icon" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
+          <div class="arch-label">6 Function Stacks</div>
+          <div class="arch-desc">XanoScript business logic</div>
+        </div>
+        <div class="arch-card" id="arch-3">
+          <svg class="arch-icon" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+            <path d="M12 22v-5" />
+            <path d="M9 8V2" />
+            <path d="M15 8V2" />
+            <path d="M18 8v5a6 6 0 0 1-6 6v0a6 6 0 0 1-6-6V8z" />
+          </svg>
+          <div class="arch-label">6 API Endpoints</div>
+          <div class="arch-desc">REST v1 with API keys</div>
+        </div>
+        <div class="arch-card" id="arch-4">
+          <svg class="arch-icon" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+            <path d="M16 16h5v5" />
+          </svg>
+          <div class="arch-label">Scheduled Tasks</div>
+          <div class="arch-desc">Nightly insight refresh</div>
+        </div>
+        <div class="arch-card" id="arch-5">
+          <svg class="arch-icon" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+          </svg>
+          <div class="arch-label">Audit Trail</div>
+          <div class="arch-desc">Every AI call logged</div>
+        </div>
+        <div class="arch-card" id="arch-6">
+          <svg class="arch-icon" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          <div class="arch-label">Xano Auth</div>
+          <div class="arch-desc">Secure session management</div>
+        </div>
+      </div>
+
+      <!-- Lower third -->
+      <div class="lower-third" id="lt-foundation">
+        <div class="lower-third-bar"></div>
+        <div class="lower-third-title">Xano is the brain</div>
+        <div class="lower-third-subtitle">Every AI call flows through function stacks.</div>
+      </div>
+    </div>
+
+    <!-- ============================================================================
+         SCENE 6: THE CLOSE (45-55s)
+         ============================================================================ -->
+    <div class="scene" id="scene-close" data-start="45" data-duration="10">
+      <div class="logo-container" id="close-logo" style="opacity: 0;">
+        <svg class="logo-mark" viewBox="-8 -8 80 80" width="180" height="180">
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#grad2)" opacity="0.45" />
+          <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#grad2)" opacity="0.75" transform="translate(2, 0)" />
+          <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#grad1)" transform="translate(4, 0)" />
+          <g transform="translate(32, 32)" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" fill="none" filter="url(#glow)">
+            <line x1="-22" y1="-10" x2="-6" y2="-10" />
+            <line x1="-22" y1="0" x2="-6" y2="0" />
+            <line x1="-22" y1="10" x2="-6" y2="10" />
+            <line x1="-6" y1="0" x2="20" y2="0" />
+            <polyline points="14,-6 22,0 14,6" fill="none" />
+          </g>
+        </svg>
+      </div>
+
+      <h1 class="hero-text" style="margin-top: 32px; opacity: 0; text-shadow: 0 0 40px rgba(245,158,11,0.3);" id="close-title">
+        Reform
+      </h1>
+
+      <p class="subtitle" style="color: #f59e0b; font-weight: 600; opacity: 0; margin-top: 12px;" id="close-tagline">
+        The future of forms.
+      </p>
+
+      <div class="closing-url" style="opacity: 0;" id="close-url">
+        reform-7jo8.onrender.com
+      </div>
+
+      <div class="xano-badge" style="opacity: 0;" id="close-xano">
+        ⚡ Built on Xano · Xano Hackathon 2026
+      </div>
+    </div>
+
+    <!-- Particles container -->
+    <div class="particles" id="particles"></div>
+  </div>
+
+  <!-- GSAP for animations -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <script>
+    // Create particles
+    const particlesContainer = document.getElementById('particles');
+    for (let i = 0; i < 50; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      particle.style.left = Math.random() * 100 + '%';
+      particle.style.top = Math.random() * 100 + '%';
+      particle.style.width = (1 + Math.random() * 3) + 'px';
+      particle.style.height = particle.style.width;
+      particle.style.opacity = 0.1 + Math.random() * 0.2;
+      particlesContainer.appendChild(particle);
+    }
+
+    // Main timeline
+    const tl = gsap.timeline({ paused: true });
+
+    // Scene 1: The Void (0-5s)
+    tl.fromTo('#scene-void', 
+      { opacity: 0 }, 
+      { opacity: 1, duration: 1 }, 
+      0
+    );
+    tl.fromTo('#scene-void .logo-mark', 
+      { scale: 0, rotation: -180 }, 
+      { scale: 1, rotation: 0, duration: 2, ease: 'back.out(1.7)' }, 
+      0.5
+    );
+
+    // Scene 2: The Chaos (5-15s)
+    tl.to('#scene-void', { opacity: 0, duration: 0.5 }, 4.5);
+    tl.fromTo('#scene-chaos', 
+      { opacity: 0 }, 
+      { opacity: 1, duration: 0.5 }, 
+      5
+    );
+
+    // Tool cards slide in from alternating directions
+    const tools = [
+      { id: '#tool-1', direction: 'left', delay: 6 },
+      { id: '#tool-2', direction: 'right', delay: 6.5 },
+      { id: '#tool-3', direction: 'left', delay: 7 },
+      { id: '#tool-4', direction: 'right', delay: 7.5 },
+      { id: '#tool-5', direction: 'left', delay: 8 },
+      { id: '#tool-6', direction: 'right', delay: 8.5 },
+      { id: '#tool-7', direction: 'left', delay: 9 },
+    ];
+
+    tools.forEach(tool => {
+      const xStart = tool.direction === 'left' ? -600 : 600;
+      tl.fromTo(tool.id, 
+        { x: xStart, opacity: 0 }, 
+        { x: 0, opacity: 1, duration: 0.8, ease: 'power3.out' }, 
+        tool.delay
+      );
+    });
+
+    // Total cost
+    tl.fromTo('#total-cost', 
+      { opacity: 0, y: 30 }, 
+      { opacity: 1, y: 0, duration: 0.8 }, 
+      10
+    );
+
+    // Lower third
+    tl.fromTo('#lt-chaos', 
+      { opacity: 0, x: -50 }, 
+      { opacity: 1, x: 0, duration: 0.6 }, 
+      11
+    );
+    tl.fromTo('#lt-chaos .lower-third-bar', 
+      { width: 0 }, 
+      { width: '100%', duration: 0.8 }, 
+      11.2
+    );
+
+    // Scene 3: The Vision (15-25s)
+    tl.to('#scene-chaos', { opacity: 0, duration: 0.5 }, 14.5);
+    tl.fromTo('#scene-vision', 
+      { opacity: 0 }, 
+      { opacity: 1, duration: 0.5 }, 
+      15
+    );
+    tl.fromTo('#vision-logo', 
+      { opacity: 0, scale: 0.5 }, 
+      { opacity: 1, scale: 1, duration: 1, ease: 'back.out(1.7)' }, 
+      17
+    );
+    tl.fromTo('#vision-title', 
+      { opacity: 0, y: 30 }, 
+      { opacity: 1, y: 0, duration: 0.8 }, 
+      18
+    );
+    tl.fromTo('#vision-subtitle', 
+      { opacity: 0 }, 
+      { opacity: 1, duration: 0.6 }, 
+      19
+    );
+
+    // Scene 4: The Impact (25-35s)
+    tl.to('#scene-vision', { opacity: 0, duration: 0.5 }, 24.5);
+    tl.fromTo('#scene-impact', 
+      { opacity: 0 }, 
+      { opacity: 1, duration: 0.5 }, 
+      25
+    );
+    tl.fromTo('#impact-old', 
+      { opacity: 0, x: -100 }, 
+      { opacity: 1, x: 0, duration: 0.8 }, 
+      26
+    );
+    tl.fromTo('#impact-arrow', 
+      { opacity: 0, y: -30 }, 
+      { opacity: 1, y: 0, duration: 0.5 }, 
+      27.5
+    );
+    tl.fromTo('#impact-new', 
+      { opacity: 0, scale: 0.5 }, 
+      { opacity: 1, scale: 1, duration: 0.8, ease: 'back.out(1.7)' }, 
+      28
+    );
+    tl.fromTo('#stats-row', 
+      { opacity: 0, y: 30 }, 
+      { opacity: 1, y: 0, duration: 0.8 }, 
+      30
+    );
+    tl.fromTo('#lt-impact', 
+      { opacity: 0, x: -50 }, 
+      { opacity: 1, x: 0, duration: 0.6 }, 
+      32
+    );
+    tl.fromTo('#lt-impact .lower-third-bar', 
+      { width: 0 }, 
+      { width: '100%', duration: 0.8 }, 
+      32.2
+    );
+
+    // Scene 5: The Foundation (35-45s)
+    tl.to('#scene-impact', { opacity: 0, duration: 0.5 }, 34.5);
+    tl.fromTo('#scene-foundation', 
+      { opacity: 0 }, 
+      { opacity: 1, duration: 0.5 }, 
+      35
+    );
+
+    // Architecture cards
+    const archCards = ['#arch-1', '#arch-2', '#arch-3', '#arch-4', '#arch-5', '#arch-6'];
+    archCards.forEach((card, i) => {
+      tl.fromTo(card, 
+        { scale: 0.8, opacity: 0 }, 
+        { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(1.7)' }, 
+        36 + i * 0.3
+      );
+    });
+
+    tl.fromTo('#lt-foundation', 
+      { opacity: 0, x: -50 }, 
+      { opacity: 1, x: 0, duration: 0.6 }, 
+      40
+    );
+    tl.fromTo('#lt-foundation .lower-third-bar', 
+      { width: 0 }, 
+      { width: '100%', duration: 0.8 }, 
+      40.2
+    );
+
+    // Scene 6: The Close (45-55s)
+    tl.to('#scene-foundation', { opacity: 0, duration: 0.5 }, 44.5);
+    tl.fromTo('#scene-close', 
+      { opacity: 0 }, 
+      { opacity: 1, duration: 0.5 }, 
+      45
+    );
+    tl.fromTo('#close-logo', 
+      { opacity: 0, scale: 0.3 }, 
+      { opacity: 1, scale: 1, duration: 1.5, ease: 'elastic.out(1, 0.5)' }, 
+      46
+    );
+    tl.fromTo('#close-title', 
+      { opacity: 0, y: 40 }, 
+      { opacity: 1, y: 0, duration: 0.8 }, 
+      48
+    );
+    tl.fromTo('#close-tagline', 
+      { opacity: 0 }, 
+      { opacity: 1, duration: 0.6 }, 
+      49
+    );
+    tl.fromTo('#close-url', 
+      { opacity: 0, y: 20 }, 
+      { opacity: 1, y: 0, duration: 0.6 }, 
+      50
+    );
+    tl.fromTo('#close-xano', 
+      { opacity: 0 }, 
+      { opacity: 1, duration: 0.6 }, 
+      51
+    );
+
+    // Export timeline for HyperFrames
+    window.__timelines = window.__timelines || {};
+    window.__timelines.main = tl;
+  </script>
+</body>
+</html>

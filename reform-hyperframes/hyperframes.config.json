@@ -1,0 +1,12 @@
+{
+  "name": "Reform Cinematic",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "output": "out/reform-hyperframes.mp4",
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "duration": 55,
+  "codec": "h264",
+  "quality": 18
+}

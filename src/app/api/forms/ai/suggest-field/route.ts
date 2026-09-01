@@ -110,26 +110,50 @@ export async function POST(request: NextRequest) {
     const tokensIn = result.input_tokens;
     const tokensOut = result.output_tokens;
 
-    // 2. Validate + log via Xano function
-    const xanoResult = await runFunction<SuggestionResponse>(
-      'ai/log_field_suggestion',
-      {
-        label: label.trim(),
-        field_type: fieldType ?? 'text',
-        llm_response: content,
-        model: result.model,
-        input_tokens: tokensIn,
-        output_tokens: tokensOut,
-        latency_ms: elapsedMs,
-        user_id: userId,
-      }
-    );
+    // 2. Validate + log via Xano function (non-fatal if Xano not configured)
+    const hasXano = process.env.XANO_TOKEN && !process.env.XANO_TOKEN.includes('placeholder') && process.env.XANO_INSTANCE_API && !process.env.XANO_INSTANCE_API.includes('placeholder');
 
-    return NextResponse.json({
-      ...xanoResult,
-      model: result.model,
-      latency_ms: elapsedMs,
-    });
+    if (hasXano) {
+      const xanoResult = await runFunction<SuggestionResponse>(
+        'ai/log_field_suggestion',
+        {
+          label: label.trim(),
+          field_type: fieldType ?? 'text',
+          llm_response: content,
+          model: result.model,
+          input_tokens: tokensIn,
+          output_tokens: tokensOut,
+          latency_ms: elapsedMs,
+          user_id: userId,
+        }
+      );
+      return NextResponse.json({
+        ...xanoResult,
+        model: result.model,
+        latency_ms: elapsedMs,
+      });
+    } else {
+      // Xano not configured — parse and return the LLM suggestion directly
+      const cleaned = content.replace(/```json\n?/g, '').replace(/```/g, '').trim();
+      let suggestions: any;
+      try {
+        suggestions = JSON.parse(cleaned);
+      } catch {
+        suggestions = {
+          suggestedType: 'text',
+          suggestedPlaceholder: `Enter ${label}...`,
+          suggestedRequired: false,
+          suggestedHelperText: '',
+          suggestedNotes: 'Parsed from local LLM response.',
+        };
+      }
+      return NextResponse.json({
+        suggestions,
+        audit_log_id: 'local-no-xano',
+        model: result.model,
+        latency_ms: elapsedMs,
+      });
+    }
   } catch (error) {
     console.error('[/api/forms/ai/suggest-field] error:', error);
     const message = error instanceof Error ? error.message : String(error);

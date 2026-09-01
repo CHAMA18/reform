@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "remotion studio",
-    "render": "remotion render ReformDemo out/reform-demo.mp4 --codec=h264 --crf=18"
+    "render": "remotion render ReformDemo out/reform-demo.mp4 --codec=h264 --crf=18",
+    "render:cinematic": "remotion render ReformCinematic out/reform-cinematic.mp4 --codec=h264 --crf=18"
   },
   "dependencies": {
     "remotion": "^4.0.0",

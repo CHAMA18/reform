@@ -48,6 +48,32 @@ if [ -n "$DATABASE_URL" ] && echo "$DATABASE_URL" | grep -q "postgresql"; then
     echo ""
 fi
 
+# --- 1b. Wait for Ollama LLM to be ready (if configured) ---
+if [ -n "$LLM_BASE_URL" ]; then
+    echo "→ Waiting for Ollama LLM to be ready..."
+    LLM_HOST=$(echo "$LLM_BASE_URL" | sed -n 's|http://\([^/:]*\).*|\1|p')
+    LLM_PORT=$(echo "$LLM_BASE_URL" | sed -n 's|.*:\([0-9]*\).*|\1|p')
+    LLM_PORT=${LLM_PORT:-11434}
+
+    echo "  Host: $LLM_HOST"
+    echo "  Port: $LLM_PORT"
+
+    # Wait up to 60 seconds for Ollama to accept connections
+    for i in $(seq 1 60); do
+        if nc -z "$LLM_HOST" "$LLM_PORT" 2>/dev/null; then
+            echo "  ✓ Ollama is ready!"
+            break
+        fi
+        if [ "$i" = "60" ]; then
+            echo "  ⚠ Ollama did not become ready in 60s — AI features may not work"
+        else
+            echo "  Attempt $i/60 — waiting..."
+        fi
+        sleep 1
+    done
+    echo ""
+fi
+
 # --- 2. Push the Prisma schema to the database ---
 # This creates all tables if they don't exist, and is safe to run on
 # every startup (it's idempotent — it only applies the diff between

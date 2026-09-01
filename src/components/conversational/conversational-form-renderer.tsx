@@ -23,7 +23,7 @@ type MicStatus = 'idle' | 'recording' | 'transcribing';
  *
  * Also includes a 🎤 mic button for voice-first input: the user can
  * speak their answer, the audio is sent to /api/forms/[id]/voice-transcribe
- * which uses z-ai-web-dev-sdk's ASR service to convert it to text. The
+ * which uses a local Whisper ASR server to convert it to text. The
  * transcribed text is then sent through the normal chat flow.
  */
 export function ConversationalFormRenderer({ shareId, formName, formDescription }: ConversationalFormRendererProps) {

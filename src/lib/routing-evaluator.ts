@@ -1,5 +1,5 @@
-import ZAI from 'z-ai-web-dev-sdk';
-import { runFunction } from '@/lib/db';
+import { llmChat } from './llm-client';
+import { runFunction } from './db';
 
 /**
  * Routing rule evaluator.
@@ -54,7 +54,6 @@ async function xanoTableOp(method: string, path: string, body?: unknown) {
 }
 
 async function getActiveRulesForForm(formId: string): Promise<RoutingRule[]> {
-  // Single-field search + in-memory filter — Xano multi-field search is broken.
   const resp = await xanoTableOp('POST', `/workspace/${XANO_WORKSPACE_ID}/table/${ROUTING_RULE_TABLE_ID}/content/search`, {
     search: { form_id: formId },
     page: 1,
@@ -100,32 +99,14 @@ export async function evaluateRoutingRules(args: {
   const submissionJson = JSON.stringify(args.submissionData, null, 2);
 
   for (const rule of rules) {
-    // Call the LLM to evaluate whether the rule matches this submission
-    const zai = await ZAI.create();
-    const completion = await zai.chat.completions.create({
-      messages: [
-        {
-          role: 'assistant',
-          content: `You are a routing rule evaluator. Decide whether a natural-language condition matches a form submission.
+    // Call the local LLM to evaluate whether the rule matches this submission
+    const result = await llmChat(
+      `You are a routing rule evaluator. Decide whether a natural-language condition matches a form submission.\n\nOutput JSON: { "matches": true|false, "confidence": 0-1, "reason": "1-sentence explanation" }\n\nOnly return matches=true if the submission clearly satisfies the condition. Output ONLY the JSON.`,
+      `Rule: "${rule.natural_language}"\n\nSubmission data:\n${submissionJson}`,
+      { max_tokens: 200, temperature: 0 }
+    );
 
-Output JSON: { "matches": true|false, "confidence": 0-1, "reason": "1-sentence explanation" }
-
-Only return matches=true if the submission clearly satisfies the condition. Output ONLY the JSON.`,
-        },
-        {
-          role: 'user',
-          content: `Rule: "${rule.natural_language}"
-
-Submission data:
-${submissionJson}`,
-        },
-      ],
-      thinking: { type: 'disabled' },
-      max_tokens: 200,
-      temperature: 0,
-    });
-
-    const content = completion.choices?.[0]?.message?.content ?? '';
+    const content = result.content;
     let matches = false;
     let reason = '';
     try {
@@ -134,7 +115,6 @@ ${submissionJson}`,
       matches = parsed.matches === true;
       reason = parsed.reason ?? '';
     } catch {
-      // If the LLM didn't return valid JSON, assume no match
       matches = false;
       reason = 'Failed to parse LLM response';
     }
@@ -153,10 +133,10 @@ ${submissionJson}`,
         label: `routing rule "${rule.name}"`,
         field_type: 'routing',
         llm_response: JSON.stringify({ matches: true, reason, actionResult }),
-        model: 'glm-4.5',
-        input_tokens: 0,
-        output_tokens: 0,
-        latency_ms: 0,
+        model: result.model,
+        input_tokens: result.input_tokens,
+        output_tokens: result.output_tokens,
+        latency_ms: result.latency_ms,
         user_id: 'routing',
       });
     } catch {
@@ -179,8 +159,6 @@ async function fireAction(
 
   switch (rule.action_type) {
     case 'email': {
-      // In production this would call a real email service. For the demo,
-      // we just log it (the audit log captures the action).
       const to = config.to ?? 'unconfigured';
       const subject = config.subject ?? `New submission matching rule "${rule.name}"`;
       console.log(`[routing] EMAIL → ${to} | subject="${subject}" | submission=${subIdStr}`);
@@ -197,10 +175,7 @@ async function fireAction(
       try {
         const resp = await fetch(url, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(config.headers ?? {}),
-          },
+          headers: { 'Content-Type': 'application/json', ...(config.headers ?? {}) },
           body: JSON.stringify({
             rule: rule.name,
             rule_id: rule.id,

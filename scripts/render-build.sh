@@ -33,21 +33,6 @@ NEXT_TELEMETRY_DISABLED=1 npm run build
 echo "  ✓ Next.js build complete"
 echo ""
 
-# --- 3. Write the z-ai-web-dev-sdk config from the Z_AI_CONFIG env var ---
-# z-ai-web-dev-sdk needs a .z-ai-config file to authenticate with the
-# inference API. The file contains a JWT token + chat ID that the SDK
-# uses to make LLM calls. We don't commit it (it's a secret) — instead
-# we write it at build time from an env var set on the Render service.
-if [ -n "$Z_AI_CONFIG" ]; then
-  echo "→ Writing .z-ai-config from Z_AI_CONFIG env var..."
-  echo "$Z_AI_CONFIG" > .z-ai-config
-  chmod 600 .z-ai-config
-  echo "  ✓ .z-ai-config written (redacted)"
-else
-  echo "  ⚠ Z_AI_CONFIG env var not set — AI features (form generation,"
-  echo "    submission insights, smart field suggestions, etc.) will fail."
-  echo "    Set Z_AI_CONFIG in the Render dashboard to enable them."
-fi
 echo ""
 
 echo "=========================================="
@@ -58,4 +43,5 @@ echo "Backend: Xano Metadata API"
 echo "  XANO_INSTANCE_API:  ${XANO_INSTANCE_API:-(not set)}"
 echo "  XANO_WORKSPACE_ID:  ${XANO_WORKSPACE_ID:-(not set)}"
 echo "  XANO_TOKEN:         ${XANO_TOKEN:+set (redacted)}"
-echo "  Z_AI_CONFIG:        ${Z_AI_CONFIG:+set (redacted)}"
+echo "  LLM_BASE_URL:       ${LLM_BASE_URL:-(not set, using localhost)}"
+echo "  LLM_MODEL:          ${LLM_MODEL:-(not set, using llama3.2)}"

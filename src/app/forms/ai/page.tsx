@@ -319,7 +319,7 @@ export default function AIFormGeneratorPage() {
                   When you click <strong>Generate form</strong>, the prompt is sent to <code className="rounded bg-white/5 px-1.5 py-0.5">POST /api/forms/ai/generate</code>, which invokes the Xano function stack <code className="rounded bg-white/5 px-1.5 py-0.5">ai/generate_form</code>.
                 </p>
                 <p>
-                  The Xano function builds a structured system prompt, calls the Next.js internal LLM proxy at <code className="rounded bg-white/5 px-1.5 py-0.5">/api/internal/llm</code> (which uses z-ai-web-dev-sdk to actually run the model), parses the response as flowchart JSON, validates it, and logs the entire invocation to the Xano <code className="rounded bg-white/5 px-1.5 py-0.5">ai_generation_log</code> table.
+                  The Xano function builds a structured system prompt, calls the local LLM via an OpenAI-compatible API (Ollama, LM Studio, etc.), parses the response as flowchart JSON, validates it, and logs the entire invocation to the Xano <code className="rounded bg-white/5 px-1.5 py-0.5">ai_generation_log</code> table.
                 </p>
                 <p>
                   The Next.js app never talks to an LLM directly — every AI call flows through Xano, so the audit trail and business logic live in your backend, not in the frontend.

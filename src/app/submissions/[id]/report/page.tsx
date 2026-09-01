@@ -95,7 +95,7 @@ export default async function SubmissionReportPage({
               <li>Reform branding header + form name + description</li>
               <li>Submission metadata (timestamp, source, status, IDs)</li>
               <li>Field-by-field responses (label + value)</li>
-              <li>AI-generated &quot;Analyst notes&quot; — the LLM writes 3-5 sentences summarising the submission, flagging anomalies or follow-ups. Generated via z-ai-web-dev-sdk and audit-logged in Xano.</li>
+              <li>AI-generated &quot;Analyst notes&quot; — the local LLM writes 3-5 sentences summarising the submission, flagging anomalies or follow-ups. Generated via OpenAI-compatible API and audit-logged in Xano.</li>
               <li>Footer with page numbers + generation timestamp</li>
             </ul>
           </details>

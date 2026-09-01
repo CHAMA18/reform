@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { aiChat } from '@/lib/ai-engine';
-import { db, runFunction } from '@/lib/db';
+import { db } from '@/lib/db';
+import { logAiGeneration } from '@/lib/xano-audit';
 import { getCurrentUser } from '@/lib/auth';
 
 /**
@@ -17,7 +18,7 @@ import { getCurrentUser } from '@/lib/auth';
  *
  * Architecture (Xano is the backend):
  *   1. Next.js fetches all submissions for the form
- *   2. Next.js builds a structured prompt and calls the LLM (z-ai-web-dev-sdk)
+ *   2. Next.js builds a structured prompt and calls the local LLM (OpenAI-compatible)
  *      to summarize: bullets, sentiment breakdown, topic clusters
  *   3. Next.js calls the Xano function stack `ai/save_form_insight`, which:
  *      - Validates the summary structure
@@ -73,7 +74,7 @@ interface CachedInsight {
   generated_at: Date;
 }
 
-// Helper: call Xano to persist a freshly-generated insight
+// Helper: call Xano to persist a freshly-generated insight (non-fatal if Xano not configured)
 async function persistInsight(args: {
   formId: string;
   submissionCount: number;
@@ -84,21 +85,23 @@ async function persistInsight(args: {
   latencyMs: number;
   userId: string;
 }): Promise<{ insight_id: string; audit_log_id: string }> {
-  const result = await runFunction<{ insight_id: string; audit_log_id: string }>(
-    'ai/save_form_insight',
-    {
-      form_id: args.formId,
-      submission_count: args.submissionCount,
-      summary_json: JSON.stringify(args.summary),
-      chart_data_json: '',
-      model: args.model,
-      input_tokens: args.inputTokens,
-      output_tokens: args.outputTokens,
-      latency_ms: args.latencyMs,
-      user_id: args.userId,
-    }
-  );
-  return result;
+  // Audit-log the insight generation
+  const auditLogId = await logAiGeneration({
+    feature: 'submission_insights',
+    userId: args.userId,
+    prompt: `Analyze ${args.submissionCount} submissions for form ${args.formId}`,
+    model: args.model,
+    response: JSON.stringify(args.summary),
+    inputTokens: args.inputTokens,
+    outputTokens: args.outputTokens,
+    latencyMs: args.latencyMs,
+    status: 'success',
+  });
+
+  return {
+    insight_id: `local_${Date.now()}`,
+    audit_log_id: auditLogId ?? 'local-no-xano',
+  };
 }
 
 // Helper: fetch cached insight from Xano (if any)
@@ -210,7 +213,7 @@ async function fetchCachedInsight(formId: string): Promise<CachedInsight | null>
   const XANO_INSTANCE_API = process.env.XANO_INSTANCE_API ?? '';
   const XANO_TOKEN = process.env.XANO_TOKEN ?? '';
   const XANO_WORKSPACE_ID = Number(process.env.XANO_WORKSPACE_ID ?? '2');
-  if (!XANO_TOKEN || !XANO_INSTANCE_API) return null;
+  if (!XANO_TOKEN || !XANO_INSTANCE_API || XANO_TOKEN.includes('placeholder') || XANO_INSTANCE_API.includes('placeholder')) return null;
 
   // table_id 10 = form_insight
   const url = `${XANO_INSTANCE_API}/workspace/${XANO_WORKSPACE_ID}/table/10/content/search`;

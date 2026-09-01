@@ -6,9 +6,9 @@ import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 
 export const metadata: Metadata = {
-  title: 'Engine Dashboard | Reform',
+  title: 'Dashboard | Reform',
   description:
-    'Manage schemas, track performance, and deploy dynamic forms from the Reform dashboard.',
+    'Manage your forms, track submissions, and monitor performance from the Reform dashboard.',
 };
 
 /**
@@ -196,9 +196,6 @@ export default async function DashboardPage() {
     console.error('[DashboardPage] failed to load data:', error);
   }
 
-  // System health is always high since the app is running
-  const systemHealth = '100.0%';
-
   // Pick an icon for each form based on its name (simple heuristic)
   const iconForForm = (name: string): string => {
     const lower = name.toLowerCase();
@@ -222,15 +219,15 @@ export default async function DashboardPage() {
   };
 
   return (
-    <AppShell activePath="/dashboard" brandSubtitle="Signed in as Engineer">
+    <AppShell activePath="/dashboard" brandSubtitle={`Signed in as ${displayName}`}>
       <div className="mx-auto w-full max-w-[1200px] px-4 pb-8 pt-20 min-[480px]:pt-8 sm:px-6">
         <div data-tour="dashboard-header" className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h2 className="text-[30px] font-semibold tracking-[-0.03em] text-rf-on-surface sm:text-[34px] md:text-[48px] md:leading-[56px]">
-              Engine Dashboard
+              Dashboard
             </h2>
             <p className="mt-1 max-w-2xl text-[14px] leading-[24px] text-rf-on-surface-variant">
-              Welcome back, <span className="font-semibold text-rf-on-surface">Engineer</span>. Manage schemas, track performance, and deploy dynamic forms.
+              Welcome back, <span className="font-semibold text-rf-on-surface">{displayName}</span>. Manage your forms, track submissions, and monitor performance.
             </p>
           </div>
           <Link
@@ -243,32 +240,43 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
-        <section data-tour="dashboard-stats" className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <section data-tour="dashboard-stats" className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            label="System Health"
-            value={systemHealth}
-            subtext="All services operational. Form engine, validation, and database responding normally."
-            icon="monitor_heart"
-          />
-          <StatCard
-            label="Active Forms"
-            value={formatCount(activeFormsCount)}
-            subtext={`${activeFormsCount} published form${activeFormsCount !== 1 ? 's' : ''} currently accepting responses.`}
+            label="Total Forms"
+            value={formatCount(formsWithCounts.length)}
+            subtext={`${activeFormsCount} live, ${formsWithCounts.length - activeFormsCount} drafts.`}
             icon="dynamic_form"
           />
           <StatCard
             label="Total Submissions"
             value={formatCount(totalSubmissions)}
-            subtext={`Across all published forms. Real-time count from the database.`}
+            subtext="Across all your forms. Real-time count."
             icon="trending_up"
+          />
+          <StatCard
+            label="AI Features"
+            value="10"
+            subtext="Form generation, insights, routing, translation, voice, and more."
+            icon="auto_awesome"
+          />
+          <StatCard
+            label="Powered By"
+            value="Xano"
+            subtext="Backend, database, API, and audit trail all running on Xano."
+            icon="database"
           />
         </section>
 
         <section data-tour="dashboard-form-library" className="glass-panel rounded-[24px] p-4 sm:p-5 md:p-6">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h3 className="text-[18px] font-semibold tracking-[-0.02em] text-rf-on-surface">
-              Form Library
-            </h3>
+            <div>
+              <h3 className="text-[18px] font-semibold tracking-[-0.02em] text-rf-on-surface">
+                Your Forms
+              </h3>
+              <p className="text-[12px] text-rf-on-surface-variant">
+                {formsWithCounts.length} form{formsWithCounts.length !== 1 ? 's' : ''} in your workspace
+              </p>
+            </div>
             <Link
               href="/templates"
               className="flex items-center gap-1 text-[12px] font-semibold uppercase tracking-[0.18em] text-rf-primary transition-colors hover:text-rf-primary/80"

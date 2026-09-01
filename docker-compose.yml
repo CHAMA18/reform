@@ -1,23 +1,34 @@
 # ===========================================
-# Reform — Docker Compose
+# Reform — Docker Compose (Full Local Stack)
 # ===========================================
-# Spins up PostgreSQL 16 + the Reform app with one command.
+# Spins up PostgreSQL + Ollama (LLM) + Whisper (ASR) + Reform app
+# with one command. Everything runs locally — no external APIs needed.
 #
 # Usage:
-#   docker compose up              # Start both services (foreground)
+#   docker compose up              # Start all services (foreground)
 #   docker compose up -d           # Start in background (detached)
 #   docker compose down            # Stop and remove containers
-#   docker compose down -v         # Also delete the database volume
+#   docker compose down -v         # Also delete all volumes
+#
 #   docker compose logs -f app     # Tail app logs
-#   docker compose logs -f db      # Tail database logs
+#   docker compose logs -f ollama  # Tail LLM logs
+#   docker compose logs -f whisper # Tail ASR logs
 #
-# Once running:
-#   App:        http://localhost:3000
-#   Database:   localhost:5432 (user: reform, pass: reform_password, db: reform)
+# Services:
+#   App:      http://localhost:3000       — Reform web app
+#   Ollama:   http://localhost:11434      — Local LLM (OpenAI-compatible API)
+#   Whisper:  http://localhost:9000       — Local ASR (voice transcription)
+#   Postgres: localhost:5432              — Database
 #
-# The first build takes ~3-5 minutes (downloads Node, installs deps,
-# builds Next.js). Subsequent starts are instant because the layers
-# are cached.
+# First run:
+#   1. docker compose up -d
+#   2. docker compose exec ollama ollama pull qwen2.5-coder:7b   (~500MB)
+#   3. Wait for Whisper model download (~150MB for base model)
+#   4. Open http://localhost:3000
+#
+# Voice transcription:
+#   The 🎤 mic button in conversational forms uses the local Whisper server.
+#   No API keys needed — everything runs on your machine.
 
 services:
   # --- PostgreSQL 16 Database ---
@@ -34,12 +45,60 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      # pg_isready returns 0 when Postgres is ready to accept connections
       test: ["CMD-SHELL", "pg_isready -U reform -d reform"]
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 10s
+
+  # --- Ollama LLM Server ---
+  # Provides the local LLM for all AI features (form generation, insights, etc.)
+  # Uses the OpenAI-compatible API at http://localhost:11434/v1
+  ollama:
+    image: ollama/ollama:latest
+    container_name: reform-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:11434/api/tags || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # --- Whisper ASR Server ---
+  # Provides voice transcription for the 🎤 mic button in conversational forms.
+  # Uses faster-whisper (CTranslate2) for fast, accurate transcription.
+  whisper:
+    build:
+      context: .
+      dockerfile: Dockerfile.whisper
+    container_name: reform-whisper
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      WHISPER_MODEL: base
+      WHISPER_DEVICE: cpu
+      WHISPER_COMPUTE_TYPE: int8
+    volumes:
+      - whisper_cache:/root/.cache/huggingface
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   # --- Reform Next.js App ---
   app:
@@ -51,14 +110,31 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # Connect to the db service using Docker's internal DNS hostname "db"
+      # Database
       DATABASE_URL: "postgresql://reform:reform_password@db:5432/reform?schema=public"
+
+      # Xano Backend (set your credentials in .env)
+      XANO_INSTANCE_API: ${XANO_INSTANCE_API:-}
+      XANO_TOKEN: ${XANO_TOKEN:-}
+      XANO_WORKSPACE_ID: ${XANO_WORKSPACE_ID:-2}
+
+      # Local LLM (Ollama)
+      LLM_BASE_URL: http://ollama:11434/v1
+      LLM_API_KEY: ollama
+      LLM_MODEL: ${LLM_MODEL:-qwen2.5-coder:7b}
+
+      # Local ASR (Whisper)
+      ASR_BASE_URL: http://whisper:9000
+      ASR_API_KEY: ""
+
       NODE_ENV: production
     depends_on:
-      # Don't start the app until the DB healthcheck passes
       db:
         condition: service_healthy
-    # The entrypoint waits for DB, runs prisma db push, then starts the server
+      ollama:
+        condition: service_healthy
+      whisper:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/"]
       interval: 30s
@@ -68,4 +144,8 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  ollama_data:
+    driver: local
+  whisper_cache:
     driver: local

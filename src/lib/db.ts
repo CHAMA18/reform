@@ -29,6 +29,7 @@
  * Auth: uses the Xano Metadata API token in `XANO_TOKEN` env var.
  */
 import { createHash, randomBytes } from 'crypto';
+import { localStore } from './local-store';
 
 // ---------------------------------------------------------------------------
 // Config
@@ -38,6 +39,13 @@ const XANO_INSTANCE_API = process.env.XANO_INSTANCE_API
   ?? 'https://xt8f-5r1j-wrmy.n7e.xano.io/api:meta';
 const XANO_TOKEN = process.env.XANO_TOKEN ?? '';
 const XANO_WORKSPACE_ID = Number(process.env.XANO_WORKSPACE_ID ?? '2');
+
+// Detect if Xano is configured with real credentials (not placeholders)
+const isXanoConfigured = XANO_TOKEN &&
+  !XANO_TOKEN.includes('placeholder') &&
+  !XANO_TOKEN.includes('your_xano') &&
+  XANO_INSTANCE_API &&
+  !XANO_INSTANCE_API.includes('placeholder');
 
 // Xano table IDs (from the provisioning step)
 const TABLE_ID = {
@@ -493,6 +501,15 @@ async function attachRelationCounts(model: ModelName, record: any, countSelect: 
 
 // Generic single-record fetch (returns null if not found)
 async function findOne<T>(model: ModelName, args: { where: Record<string, any>; select?: Record<string, boolean>; include?: Record<string, boolean> }): Promise<T | null> {
+  // Use local store when Xano is not configured
+  if (!isXanoConfigured) {
+    if (model === 'form') {
+      const form = localStore.form.findFirst(args);
+      return form as unknown as T | null;
+    }
+    return null;
+  }
+
   const tableId = TABLE_ID[model];
   const filter = buildFilter(model, args.where);
   // Xano search only supports ONE field — use it as the primary filter
@@ -518,6 +535,17 @@ async function findMany<T>(model: ModelName, args: {
   select?: Record<string, boolean>;
   include?: Record<string, boolean>;
 } = {}): Promise<T[]> {
+  // Use local store when Xano is not configured
+  if (!isXanoConfigured) {
+    if (model === 'form') {
+      return localStore.form.findMany(args) as unknown as T[];
+    }
+    if (model === 'submission') {
+      return localStore.submission.findMany(args) as unknown as T[];
+    }
+    return [];
+  }
+
   const tableId = TABLE_ID[model];
   const filter = buildFilter(model, args.where);
   const sort = buildOrderBy(model, args.orderBy);
@@ -555,6 +583,26 @@ async function findMany<T>(model: ModelName, args: {
 }
 
 async function createOne<T>(model: ModelName, data: Record<string, any>): Promise<T> {
+  // Use local store when Xano is not configured
+  if (!isXanoConfigured) {
+    console.log(`[db] Using local store for ${model}.create()`);
+    if (model === 'form') {
+      const form = localStore.form.create(data);
+      return form as unknown as T;
+    }
+    if (model === 'submission') {
+      const sub = localStore.submission.create(data);
+      return sub as unknown as T;
+    }
+    // For other models, generate a minimal record
+    return {
+      id: generateCuid(),
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as T;
+  }
+
   const tableId = TABLE_ID[model];
   const payload: Record<string, any> = { ...data };
   // Submission: Prisma uses `id DateTime @default(now())` as the PK. Materialise
@@ -579,6 +627,15 @@ async function createOne<T>(model: ModelName, data: Record<string, any>): Promis
 }
 
 async function updateOne<T>(model: ModelName, where: Record<string, any>, data: Record<string, any>): Promise<T> {
+  // Use local store when Xano is not configured
+  if (!isXanoConfigured) {
+    if (model === 'form') {
+      const form = localStore.form.update({ where, data });
+      return form as unknown as T;
+    }
+    throw new Error(`Local store: updateOne not implemented for ${model}`);
+  }
+
   // Find the Xano record first (to get its int id)
   const existing = await findOne<any>(model, { where });
   if (!existing) {
@@ -612,6 +669,12 @@ async function updateOne<T>(model: ModelName, where: Record<string, any>, data: 
 }
 
 async function deleteOne(model: ModelName, where: Record<string, any>): Promise<void> {
+  // Use local store when Xano is not configured
+  if (!isXanoConfigured) {
+    if (model === 'form') localStore.form.delete({ where });
+    return;
+  }
+
   // Find the Xano int id (single-field search + in-memory filter for multi-field where)
   const filter = buildFilter(model, where);
   const searchBody: any = { page: 1, per_page: 50 };
@@ -627,6 +690,13 @@ async function deleteOne(model: ModelName, where: Record<string, any>): Promise<
 }
 
 async function deleteMany(model: ModelName, where: Record<string, any> | undefined): Promise<{ count: number }> {
+  // Use local store when Xano is not configured
+  if (!isXanoConfigured) {
+    if (model === 'form') return localStore.form.deleteMany({ where });
+    if (model === 'submission') return localStore.submission.deleteMany({ where });
+    return { count: 0 };
+  }
+
   if (!where || Object.keys(where).length === 0) {
     // Refuse to delete-all in absence of a filter (matches Prisma's safe default)
     return { count: 0 };
@@ -654,6 +724,13 @@ async function deleteMany(model: ModelName, where: Record<string, any> | undefin
 }
 
 async function countRecords(model: ModelName, where: Record<string, any> | undefined): Promise<number> {
+  // Use local store when Xano is not configured
+  if (!isXanoConfigured) {
+    if (model === 'form') return localStore.form.count(where ? { where } : undefined);
+    if (model === 'submission') return localStore.submission.count(where ? { where } : undefined);
+    return 0;
+  }
+
   // Xano's search endpoint returns `itemsTotal` for the matching count,
   // but `itemsTotal` is the count of records returned by the SINGLE-FIELD
   // search — for multi-field filters we need to count after in-memory filtering.

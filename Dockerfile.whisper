@@ -1,0 +1,41 @@
+# ===========================================
+# Reform — Whisper ASR Server Dockerfile
+# ===========================================
+# Runs a local faster-whisper server for voice-first form submissions.
+#
+# Build:  docker build -t reform-whisper -f Dockerfile.whisper .
+# Run:    docker run -p 9000:9000 reform-whisper
+#
+# Or use docker-compose (recommended):
+#   docker compose up whisper
+
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install system dependencies for faster-whisper (CTranslate2)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY scripts/whisper-server.py ./whisper-server.py
+RUN pip install --no-cache-dir faster-whisper
+
+# The model will be downloaded on first run and cached in the volume.
+# To pre-download, mount a volume at /root/.cache/huggingface
+ENV WHISPER_MODEL=base
+ENV WHISPER_DEVICE=cpu
+ENV WHISPER_COMPUTE_TYPE=int8
+
+EXPOSE 9000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:9000/health || exit 1
+
+# Install curl for healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
+CMD ["python", "whisper-server.py", "--model", "base", "--port", "9000"]

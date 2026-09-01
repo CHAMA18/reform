@@ -258,8 +258,8 @@ export function InsightsPanel({ formId, formName }: InsightsPanelProps) {
           </div>
         </summary>
         <p className="mt-3 text-[11px] leading-relaxed text-rf-on-surface-variant">
-          Reform fetches all submissions, builds a structured prompt, and asks the LLM
-          (z-ai-web-dev-sdk, glm-4.5) to summarize them. The result is then validated and
+          Reform fetches all submissions, builds a structured prompt, and asks the local LLM
+          (OpenAI-compatible API) to summarize them. The result is then validated and
           cached in Xano via the <code className="rounded bg-white/5 px-1.5 py-0.5">ai/save_form_insight</code> function stack — which inserts a row in the <code className="rounded bg-white/5 px-1.5 py-0.5">form_insight</code> table and a row in <code className="rounded bg-white/5 px-1.5 py-0.5">ai_generation_log</code> for the audit trail.
         </p>
       </details>

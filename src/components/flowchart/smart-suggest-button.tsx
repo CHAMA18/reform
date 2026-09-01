@@ -35,7 +35,7 @@ interface SuggestionResult {
  *
  * Architecture:
  *   1. POST /api/forms/ai/suggest-field { label, fieldType }
- *   2. Next.js invokes z-ai-web-dev-sdk with a structured system prompt
+ *   2. Next.js invokes the local LLM (OpenAI-compatible) with a structured system prompt
  *   3. Next.js calls Xano function 'ai/log_field_suggestion' which validates
  *      the response + logs to ai_generation_log
  *   4. UI displays the suggestion with an "Apply" button

@@ -77,7 +77,7 @@ Reform ships with a containerised setup (Docker Compose) and a one-command local
 
 ### Option A — Docker Compose (recommended, zero prerequisites)
 
-Spins up PostgreSQL 16 + the Reform app in two containers with one command. No need to install Node.js, PostgreSQL, or any dependencies on your host machine.
+Spins up the **complete local stack** with one command — PostgreSQL, Ollama (LLM), Whisper (ASR), and the Reform app. No external APIs or dependencies needed.
 
 **Prerequisites:** [Docker](https://docs.docker.com/get-docker/) + [Docker Compose](https://docs.docker.com/compose/install/) (Docker Desktop includes both).
 
@@ -86,33 +86,50 @@ Spins up PostgreSQL 16 + the Reform app in two containers with one command. No n
 git clone https://github.com/CHAMA18/reform.git
 cd reform
 
-# 2. Start the stack (builds the image on first run — takes ~3-5 min)
-docker compose up
+# 2. Start everything
+docker compose up -d
 
-# → App:   http://localhost:3000
-# → DB:    localhost:5432 (user: reform, password: reform_password, db: reform)
+# 3. Download the LLM model (one-time, ~500MB)
+docker compose exec ollama ollama pull qwen2.5-coder:7b
+
+# 4. Wait for Whisper model to download (~150MB on first run)
+docker compose logs -f whisper  # Ctrl+C when you see "Listening on"
 ```
+
+**Services:**
+
+| Service | URL | Purpose |
+|---------|-----|---------|
+| **App** | http://localhost:3000 | Reform web app |
+| **Ollama** | http://localhost:11434 | Local LLM (form generation, insights, etc.) |
+| **Whisper** | http://localhost:9000 | Local ASR (voice transcription) |
+| **Postgres** | localhost:5432 | Database |
 
 The first `docker compose up` builds the Next.js production bundle inside the container. Subsequent starts are instant (layers are cached). The app automatically:
 
 1. Waits for PostgreSQL to accept connections
-2. Pushes the Prisma schema (creates all tables)
-3. Starts the Next.js standalone server
+2. Waits for Ollama LLM to be ready
+3. Waits for Whisper ASR to be ready
+4. Pushes the Prisma schema (creates all tables)
+5. Starts the Next.js standalone server
 
 **Background mode** (detached):
 
 ```bash
 docker compose up -d              # start in background
 docker compose logs -f app        # tail app logs
-docker compose logs -f db         # tail database logs
-docker compose down               # stop (data is preserved in a volume)
-docker compose down -v            # stop + delete all database data
+docker compose logs -f ollama     # tail LLM logs
+docker compose logs -f whisper    # tail ASR logs
+docker compose down               # stop (data is preserved in volumes)
+docker compose down -v            # stop + delete all data
 ```
 
 **Verify it's running:**
 
 ```bash
 curl http://localhost:3000/                                 # → 200 OK (HTML)
+curl http://localhost:11434/api/tags                        # → list of LLM models
+curl http://localhost:9000/health                           # → {"status": "ok"}
 curl http://localhost:3000/api/auth/guest -L -o /dev/null   # → guest sign-in, 200
 ```
 
@@ -270,12 +287,34 @@ curl -X POST https://reform-7jo8.onrender.com/api/v1/forms \
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `DATABASE_URL` | Yes | — | PostgreSQL connection string (e.g. `postgresql://user:pass@host:5432/db?schema=public`) |
+| `XANO_INSTANCE_API` | Yes | — | Xano Metadata API base URL |
+| `XANO_TOKEN` | Yes | — | Xano Metadata API access token |
+| `XANO_WORKSPACE_ID` | Yes | `2` | Xano workspace ID |
+| `LLM_BASE_URL` | No | `http://localhost:11434/v1` | Local LLM server URL (Ollama/LM Studio) |
+| `LLM_API_KEY` | No | `ollama` | API key for the LLM server |
+| `LLM_MODEL` | No | `llama3.2` | Model name to use |
+| `ASR_BASE_URL` | No | `http://localhost:9000` | Local Whisper ASR server URL |
+| `ASR_API_KEY` | No | — | API key for the ASR server |
 
-Authentication is fully self-contained — email/password sign-in, email/password
-sign-up, and a one-click **"Sign In As A Guest"** mode that creates a shared
-guest account. No third-party OAuth providers or external auth services are
-used, so no client IDs, secrets, or Supabase keys are required.
+### Local LLM Setup
+
+Reform uses a **local LLM** for all AI features. No external AI APIs required.
+
+```bash
+# One-command setup (installs Ollama + pulls model)
+./scripts/setup-local-llm.sh
+
+# Or manually:
+# 1. Install Ollama: https://ollama.com/download
+# 2. Pull a model: ollama pull llama3.2
+# 3. Start server: ollama serve
+```
+
+Supported backends:
+- **Ollama** (default) — `http://localhost:11434/v1`
+- **LM Studio** — `http://localhost:1234/v1`
+- **vLLM** — `http://localhost:8000/v1`
+- Any OpenAI-compatible server
 
 Copy `.env.example` to `.env` and adjust:
 
@@ -363,7 +402,9 @@ Full interactive documentation at **http://localhost:3000/docs/api**
 
 - **Framework**: Next.js 16 (App Router, Turbopack)
 - **Language**: TypeScript 5
-- **Database**: PostgreSQL 16 + Prisma 6 ORM
+- **Backend**: Xano (Metadata API, XanoScript function stacks)
+- **LLM**: Local OpenAI-compatible server (Ollama, LM Studio, etc.)
+- **ASR**: Local Whisper server (optional, for voice submissions)
 - **Validation**: Zod (dynamic, config-driven)
 - **Styling**: Tailwind CSS 4 + shadcn/ui
 - **State**: Zustand (flowchart builder, walkthrough)
