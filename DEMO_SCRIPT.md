@@ -1,123 +1,169 @@
-# Reform — Demo Video Script (90 seconds)
+# Reform — Demo Video Script (2-4 minutes)
 
-For the Xano Hackathon "Rebuild a SaaS Tool You Hate" submission.
+## Recording Setup
 
-**Total time:** 90 seconds
-**Setup:** One browser window, signed into Reform. One terminal showing the Xano workspace in another tab.
-
----
-
-## [0:00 — 0:05] Title card
-
-> **"Reform — the AI-native form builder that replaces Typeform + Zapier + Airtable + Metabase + Customer.io + Hotjar + Localize. Built on Xano. $99/mo instead of $485/mo."**
->
-> *Show the $485 → $99 number on screen.*
+- **Resolution:** 1920×1080
+- **Browser:** Chrome, full-screen, bookmarks bar hidden
+- **Theme:** Dark mode (default)
+- **Tool:** ScreenFlow, OBS, or QuickTime (Cmd+Shift+5 on Mac)
+- **Server:** Run `npm run dev` before recording
 
 ---
 
-## [0:05 — 0:15] AI Form Generator (Tier 1 #1)
+## SCENE 1: Hook (0:00 - 0:15)
 
-> **"Type a prompt, get a form."**
+**What to show:** Open the Reform landing page → Dashboard
 
-- Navigate to `/forms/ai`
-- Click "NPS Survey" example chip (auto-fills prompt)
-- Click "Generate form"
-- **Watch the spinner** — `13.8s` round-trip, model is `glm-4.5`
-- Result shows: 5 nodes (start, 3 fields, submit), 4 edges, suggested name + description
-- Click "Open in builder" → flowchart loads in the visual editor
+**Voiceover:**
+> "This is Reform — one AI-native platform that replaces seven SaaS tools your business hates. It's built on Xano with OpenAI, and it lets you describe a form in plain English and get a live, shareable link in five seconds."
 
----
-
-## [0:15 — 0:25] Smart Field Suggestions (Tier 1 #3)
-
-> **"AI suggests the right field type and validation — automatically."**
-
-- In the builder, click a "Country" field node
-- In the inspector, click "Suggest config"
-- AI returns: `dropdown` type, 10 realistic country options, validation, rationale
-- Click "Apply" → field type upgrades from text to dropdown
+**Actions:**
+1. Show the landing page with the Reform logo and tagline
+2. Click "Get Started" → lands on Dashboard
+3. Show the dashboard with stats: Forms, Submissions, AI Features, Powered by Xano
 
 ---
 
-## [0:25 — 0:40] Conversational Form Mode (Tier 2 #4) ⭐ wow moment
+## SCENE 2: AI Form Generation (0:15 - 0:50)
 
-> **"The same form, but as a chat. AI walks you through each question."**
+**What to show:** The AI Form Generator creating a form from a prompt
 
-- Open a new tab to `/f/{shareId}/chat`
-- Bot greets: "What's your Name?"
-- Type "Alice Johnson"
-- Bot: "What's your Email Address?"
-- Type "alice@acme.com"
-- After last question, bot: "Thanks! I have everything I need. Submitting your responses now…"
-- Success banner with submission ID
+**Voiceover:**
+> "Watch this. I'm going to describe an NPS survey in plain English — and the AI will build the entire form."
 
----
+**Actions:**
+1. Navigate to sidebar → "Generate" (AI Form Generator)
+2. Type this prompt in the input:
+   ```
+   Create an NPS survey with name, email, a 0-10 rating scale,
+   a category dropdown (Product, Support, Billing, Other),
+   and a comments field
+   ```
+3. Click "Generate Form" — watch the AI process (show the spinner)
+4. The flowchart appears with 7 nodes (start, name, email, rating, dropdown, comments, submit)
+5. Click "Publish" — show the shareable URL
+6. Open the shareable URL in a new tab — show the live form
+7. Fill in sample data and submit
 
-## [0:40 — 0:50] Voice-First Mode (Tier 3 #7)
-
-> **"Or speak your answer — Reform transcribes it with AI."**
-
-- Click the 🎤 mic button on the chat input
-- Recording indicator pulses red
-- Click again to stop → "Transcribing your voice…"
-- Transcribed text appears in the input
-
----
-
-## [0:50 — 1:00] AI Submission Insights (Tier 1 #2)
-
-> **"Get a 30-second summary of 200 submissions."**
-
-- Navigate to `/forms/{id}/insights`
-- After 6 seconds: 3 bullets, sentiment breakdown (40/20/40 pos/neu/neg), 4 topic clusters, 2 standout verbatim quotes
-- Show "cached" badge — second visit returns instantly
+**Key moment:** The "5 seconds from prompt to live form" — this is the wow factor.
 
 ---
 
-## [1:00 — 1:10] AI Smart Routing (Tier 2 #5)
+## SCENE 3: Sidebar Tour (0:50 - 1:10)
 
-> **"Write routing rules in plain English. AI evaluates every submission."**
+**What to show:** The 12-item sidebar with all AI features
 
-- Navigate to `/forms/{id}/routing`
-- Show existing rule: "If the feedback mentions billing → email finance@acme.com"
-- Submit a billing-related response → rule fires (fire_count goes to 1)
-- Submit a positive response → rule does NOT fire (fire_count stays at 1)
+**Voiceover:**
+> "Every feature in the sidebar is AI-powered. Let me show you the key ones."
 
----
-
-## [1:10 — 1:18] Auto-Translation (Tier 2 #6) + PDF Reports (Tier 3 #9)
-
-> **"One-click translate to 10 languages. PDF reports with AI analyst notes."**
-
-- Click "Translate to Spanish" → "Start" → "Comenzar", "Name" → "Nombre", "Submit" → "Enviar"
-- Click "Download PDF" for a submission → branded PDF with AI "Analyst notes" section
+**Actions:**
+1. Hover over each sidebar section to show the subtitles:
+   - Build: Generate, Builder, Submissions
+   - Experience: Conversational, Voice, Translation
+   - Insights: Routing, Analytics, Reports
+2. Click on "Submissions" — show the real-time entry stream
+3. Show a few submissions with data
 
 ---
 
-## [1:18 — 1:30] The Xano backend ⭐ hackathon requirement
+## SCENE 4: Conversational Forms (1:10 - 1:30)
 
-> **"Every AI call flows through Xano."**
+**What to show:** AI chat interface guiding a respondent
 
-- Switch to terminal showing Xano Studio
-- Show the `ai_generation_log` table — **every AI invocation logged** with prompt, model, tokens, latency, status
-- Show the 3 XanoScript function stacks: `ai/validate_and_log_form`, `ai/save_form_insight`, `ai/log_field_suggestion`
-- Show the 11 tables: user, post, form, submission, api_key, session, ai_generation_log, form_insight, form_translation, form_routing_rule, field_event, conversation
-- **"11 tables, 3 function stacks, 1 backend. Xano is Reform's brain — not just its database."**
+**Voiceover:**
+> "Reform can turn any form into a conversational experience. The AI asks questions one at a time, adapts to responses, and feels like talking to a person."
 
----
-
-## [1:30 — 1:35] Closing
-
-> **"Reform — 7 tools, 1 AI-native platform, $99/mo. Built on Xano."**
->
-> *Show logo + URL on screen.*
+**Actions:**
+1. Navigate to sidebar → "Chat" (Conversational)
+2. Show the live chat preview with the typing animation
+3. Show the progress indicator (0/3 → 1/3 → 2/3 → Complete)
+4. Demonstrate the bot asking questions and the user answering
 
 ---
 
-## Tips for recording
+## SCENE 5: Smart Routing (1:30 - 1:50)
 
-- **Use Loom** (free, browser-based, 5-min limit fine for 90s)
-- **Show your face** in the corner — judges like seeing the builder
-- **Speed up waiting time** — during the 13.8s AI form generation, cut to a fast-forward or show the audit log appearing live in Xano Studio
-- **Have everything pre-loaded** — sign in, open the form, have a submission ready before you start recording
-- **End with a still frame** showing the URL + your email for 3 seconds so judges can write it down
+**What to show:** AI routing rules that evaluate submissions
+
+**Voiceover:**
+> "When a submission arrives, AI evaluates it against your routing rules and routes it to the right team — automatically."
+
+**Actions:**
+1. Navigate to sidebar → "Routing" (Smart Routing)
+2. Show the visual flow diagram (Submission → AI Evaluator → Rules → Actions)
+3. Show a few pre-built routing rules with their conditions
+4. Click on the "Test Playground" tab
+5. Paste a sample submission and run the AI evaluation
+6. Show which rules matched with confidence scores
+
+---
+
+## SCENE 6: Subscription + Xano (1:50 - 2:10)
+
+**What to show:** Subscription management and Xano backend proof
+
+**Voiceover:**
+> "Reform includes subscription management with Free, Pro, and Enterprise tiers. And everything runs on Xano — 12 tables, real API calls, audit trail."
+
+**Actions:**
+1. Navigate to sidebar → "Forms"
+2. Scroll down to the Subscription & Billing section
+3. Show the three plan cards (Free $0, Pro $29, Enterprise $99)
+4. Show the usage progress bars
+5. Quick flash: Open Xano Studio in a new tab → show the Reform workspace with tables
+
+---
+
+## SCENE 7: Closing (2:10 - 2:30)
+
+**What to show:** Final dashboard view with stats
+
+**Voiceover:**
+> "Reform replaces Typeform, Intercom chat, Zapier routing, and translation tools — all in one AI-native platform. Built with Xano, powered by OpenAI, and designed for the AI era. That's Reform."
+
+**Actions:**
+1. Navigate back to Dashboard
+2. Show the final stats
+3. Fade to Reform logo + tagline
+
+---
+
+## Post-Production Notes
+
+- **Total length:** ~2 minutes 30 seconds
+- **Pacing:** Fast, confident, no pauses longer than 2 seconds
+- **Music:** Optional subtle background music (low volume)
+- **Cuts:** Use quick cuts between scenes, no transitions longer than 0.5s
+- **Resolution:** Export as 1080p H.264
+
+## Voiceover (Full Script)
+
+```
+This is Reform — one AI-native platform that replaces seven
+SaaS tools your business hates. It's built on Xano with
+OpenAI, and it lets you describe a form in plain English and
+get a live, shareable link in five seconds.
+
+Watch this. I'm going to describe an NPS survey in plain
+English — and the AI will build the entire form. [PAUSE FOR
+GENERATION] Done. Seven fields, dropdown with options, all
+validated. I click Publish — and it's live.
+
+Every feature in the sidebar is AI-powered. Let me show you
+the key ones.
+
+Reform can turn any form into a conversational experience.
+The AI asks questions one at a time and adapts to responses.
+
+When a submission arrives, AI evaluates it against your
+routing rules and routes it to the right team — automatically.
+
+Reform includes subscription management with Free, Pro, and
+Enterprise tiers. And everything runs on Xano — 12 tables,
+real API calls, full audit trail.
+
+Reform replaces Typeform, Intercom chat, Zapier routing,
+and translation tools — all in one AI-native platform. Built
+with Xano, powered by OpenAI, and designed for the AI era.
+That's Reform.
+```
