@@ -23,9 +23,11 @@ echo "→ Switching to static export config..."
 cp next.config.ts next.config.ts.bak
 cp next.config.xano.ts next.config.ts
 
-# 2. Temporarily move API routes out (they can't be statically exported)
+# 2. Temporarily move API routes OUT of src/app/ entirely
+#    (Next.js scans all subdirs of src/app/ for route.ts files —
+#     even .bak directories are picked up)
 echo "→ Moving API routes out temporarily..."
-mv src/app/api src/app/api.bak
+mv src/app/api /tmp/reform-api-backup
 
 # 3. Build — use npx next build directly (not npm run build which has
 #    standalone-specific post-build copy commands)
@@ -36,7 +38,7 @@ echo ""
 
 # 4. Restore API routes
 echo "→ Restoring API routes..."
-mv src/app/api.bak src/app/api
+mv /tmp/reform-api-backup src/app/api
 echo "  ✓ API routes restored"
 echo ""
 
