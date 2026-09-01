@@ -21,9 +21,10 @@ echo "→ Switching to static export config..."
 cp next.config.ts next.config.ts.bak
 cp next.config.xano.ts next.config.ts
 
-# 2. Build
+# 2. Build — use 'npx next build' directly (not 'npm run build' which
+#    has standalone-specific post-build copy commands that break with export)
 echo "→ Building Next.js static export..."
-NEXT_TELEMETRY_DISABLED=1 npm run build 2>&1 || true
+NEXT_TELEMETRY_DISABLED=1 npx next build 2>&1 || true
 echo "  ✓ Static export complete"
 echo ""
 
@@ -33,7 +34,18 @@ mv next.config.ts.bak next.config.ts
 echo "  ✓ Config restored"
 echo ""
 
-# 4. Upload to Xano
+# 4. Check output
+if [ -d "out" ]; then
+  echo "→ Static files generated in ./out/"
+  ls -la out/ | head -10
+  echo ""
+else
+  echo "  ⚠ No ./out/ directory found — build may have failed"
+  echo "  Check the build output above for errors"
+  exit 1
+fi
+
+# 5. Upload to Xano
 if [ -z "$XANO_TOKEN" ]; then
   echo "  ⚠ XANO_TOKEN not set — skipping upload"
   echo "  Static files are in ./out/"
