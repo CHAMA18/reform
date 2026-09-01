@@ -23,11 +23,20 @@ echo "→ Switching to static export config..."
 cp next.config.ts next.config.ts.bak
 cp next.config.xano.ts next.config.ts
 
-# 2. Temporarily move API routes OUT of src/app/ entirely
-#    (Next.js scans all subdirs of src/app/ for route.ts files —
-#     even .bak directories are picked up)
-echo "→ Moving API routes out temporarily..."
+# 2. Temporarily move API routes and dynamic route pages OUT of src/app/
+#    - API routes use server-side features (can't be statically exported)
+#    - Dynamic route pages ([id], [shareId]) need generateStaticParams()
+#      which doesn't make sense for a static landing page build
+echo "→ Moving API routes + dynamic pages out temporarily..."
 mv src/app/api /tmp/reform-api-backup
+# Move all directories containing [id] or [shareId]
+mkdir -p /tmp/reform-dynamic-backup
+for dir in src/app/forms/\[id\] src/app/f/\[shareId\] src/app/embed/\[shareId\] src/app/submissions/\[id\]; do
+  if [ -d "$dir" ]; then
+    mkdir -p "/tmp/reform-dynamic-backup/$(dirname ${dir#src/app/})"
+    mv "$dir" "/tmp/reform-dynamic-backup/${dir#src/app/}"
+  fi
+done
 
 # 3. Build — use npx next build directly (not npm run build which has
 #    standalone-specific post-build copy commands)
@@ -36,9 +45,14 @@ NEXT_TELEMETRY_DISABLED=1 npx next build 2>&1 || true
 echo "  ✓ Static export complete"
 echo ""
 
-# 4. Restore API routes
-echo "→ Restoring API routes..."
+# 4. Restore API routes + dynamic pages
+echo "→ Restoring API routes + dynamic pages..."
 mv /tmp/reform-api-backup src/app/api
+# Restore dynamic route pages
+if [ -d /tmp/reform-dynamic-backup ]; then
+  cp -r /tmp/reform-dynamic-backup/* src/app/ 2>/dev/null || true
+  rm -rf /tmp/reform-dynamic-backup
+fi
 echo "  ✓ API routes restored"
 echo ""
 
