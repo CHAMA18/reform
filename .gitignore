@@ -65,3 +65,4 @@ postgres_data/
 /upload/.xano-token
 .xano-token
 dev.pid
+.next
