@@ -1116,7 +1116,7 @@ const ActClose: React.FC = () => {
               border: '1px solid rgba(255,255,255,0.08)',
             }}
           >
-            reform-7jo8.onrender.com
+            reform-pearl.vercel.app
           </span>
         </div>
 

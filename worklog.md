@@ -134,3 +134,11 @@ Stage Summary:
   tsc clean; stills bright at title/generator/chat/mosaic/endcard/credit.
 - Note: Remotion `still` on <Video> frames can snap before decode (black);
   full renders decode deterministically (proven via the HyperFrames twin's mp4).
+
+## End-card URL fix (Sep 3)
+- Films' end cards + browser-chrome URL bars showed **reform-7jo8.onrender.com** (Render, down).
+- Updated all film sources to **reform-pearl.vercel.app** (live):
+  - reform-hyperframes/demo.html (HTML cinematic) — end card
+  - remotion/src/ReformDemo.tsx — 10 screen chrome URL bars + end card
+  - remotion/src/ReformHackathon.tsx + ReformCinematic.tsx — end cards
+- tsc --noEmit clean; full 5400-frame re-render of the 3:00 cinematic in one pass; exactly 180.000s; synced to out/reform-hackathon-demo.mp4.

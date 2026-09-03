@@ -313,7 +313,7 @@ export const ReformDemo: React.FC = () => {
           <ScreenScene
             name="Landing page"
             img={asset('landing.png')}
-            url="reform-7jo8.onrender.com/"
+            url="reform-pearl.vercel.app/"
             title="Start with the real product"
             body="A focused entry point for teams building better customer experiences."
             cursor={[560, 500]}
@@ -324,7 +324,7 @@ export const ReformDemo: React.FC = () => {
           <ScreenScene
             name="Dashboard"
             img={asset('dashboard.png')}
-            url="reform-7jo8.onrender.com/dashboard"
+            url="reform-pearl.vercel.app/dashboard"
             title="Everything starts here"
             body="Forms, submissions, completion rate, and AI activity in one command center."
             cursor={[600, 300]}
@@ -336,7 +336,7 @@ export const ReformDemo: React.FC = () => {
           <ScreenScene
             name="AI Form Generator"
             img={asset('ai-gen.png')}
-            url="reform-7jo8.onrender.com/forms/ai"
+            url="reform-pearl.vercel.app/forms/ai"
             title="Describe the form in plain English"
             body="Reform turns a prompt into a validated structure — fields, options, and logic included."
             cursor={[640, 470]}
@@ -348,7 +348,7 @@ export const ReformDemo: React.FC = () => {
           <ScreenScene
             name="Flowchart Builder"
             img={asset('builder.png')}
-            url="reform-7jo8.onrender.com/forms/new"
+            url="reform-pearl.vercel.app/forms/new"
             title="See the logic, not just the UI"
             body="The visual builder makes every branch explicit and keeps the experience editable."
             accent={GREEN}
@@ -361,7 +361,7 @@ export const ReformDemo: React.FC = () => {
           <ScreenScene
             name="Conversational form"
             img={asset('chat.png')}
-            url="reform-7jo8.onrender.com/f/demo/chat"
+            url="reform-pearl.vercel.app/f/demo/chat"
             title="Answer by conversation"
             body="One question at a time — the AI follows the flow and captures the submission."
             accent={BLUE}
@@ -374,7 +374,7 @@ export const ReformDemo: React.FC = () => {
           <ScreenScene
             name="Voice mode"
             img={asset('voice.png')}
-            url="reform-7jo8.onrender.com/f/demo/voice"
+            url="reform-pearl.vercel.app/f/demo/voice"
             title="Answer hands-free"
             body="Speak naturally — local transcription turns speech into structured answers."
             accent={AMBER}
@@ -387,7 +387,7 @@ export const ReformDemo: React.FC = () => {
           <ScreenScene
             name="Translation"
             img={asset('translate.png')}
-            url="reform-7jo8.onrender.com/forms/demo/translate"
+            url="reform-pearl.vercel.app/forms/demo/translate"
             title="Every visitor, in their language"
             body="One click translates the whole form — the visitor's language is detected automatically."
             accent={VIOLET}
@@ -400,7 +400,7 @@ export const ReformDemo: React.FC = () => {
           <ScreenScene
             name="Submissions"
             img={asset('submissions.png')}
-            url="reform-7jo8.onrender.com/submissions"
+            url="reform-pearl.vercel.app/submissions"
             title="Every response becomes signal"
             body="Inspect real submissions and move from raw answers to useful decisions."
             accent={VIOLET}
@@ -413,7 +413,7 @@ export const ReformDemo: React.FC = () => {
           <ScreenScene
             name="Drop-off analytics"
             img={asset('analytics.png')}
-            url="reform-7jo8.onrender.com/forms/demo/analytics"
+            url="reform-pearl.vercel.app/forms/demo/analytics"
             title="AI finds the drop-off — and the fix"
             body="Per-field events become a readable report with concrete recommendations."
             accent={GREEN}
@@ -425,7 +425,7 @@ export const ReformDemo: React.FC = () => {
           <ScreenScene
             name="API keys"
             img={asset('api-keys.png')}
-            url="reform-7jo8.onrender.com/api-keys"
+            url="reform-pearl.vercel.app/api-keys"
             title="Built for developers too"
             body="Scoped API keys make the same workflow programmable and secure."
             accent={BLUE}
@@ -478,7 +478,7 @@ const EndCard: React.FC = () => {
             Powered by Xano
           </span>
         </div>
-        <div style={{ marginTop: 30, color: MUTED, font: '18px monospace' }}>reform-7jo8.onrender.com</div>
+        <div style={{ marginTop: 30, color: MUTED, font: '18px monospace' }}>reform-pearl.vercel.app</div>
         <div style={{ marginTop: 44, color: '#78716c', font: '600 13px "DM Sans", sans-serif', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
           Made with Remotion
         </div>
