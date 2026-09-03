@@ -1,19 +1,4 @@
 #!/bin/bash
-# ============================================================
-# Reform — Render Build Script (Xano backend)
-# ============================================================
-# Runs during the Render BUILD phase.
-#
-# Xano is the backend — there's no local database to push a schema to.
-# The Xano tables (user, form, submission, etc.) were provisioned at
-# setup time via the Xano metadata API. So this build script is simple:
-# install deps + build Next.js.
-#
-# Flow:
-#   1. npm install
-#   2. npm run build (Next.js standalone output)
-# ============================================================
-
 set -e
 
 echo "=========================================="
@@ -21,20 +6,25 @@ echo "  Reform — Render Build"
 echo "=========================================="
 echo ""
 
-# --- 1. Install dependencies ---
 echo "→ Installing dependencies..."
 npm install
 echo "  ✓ Dependencies installed"
 echo ""
 
-# --- 2. Build Next.js ---
 echo "→ Building Next.js..."
-NEXT_TELEMETRY_DISABLED=1 npm run build
+NEXT_TELEMETRY_DISABLED=1 npx next build
 echo "  ✓ Next.js build complete"
 echo ""
 
-echo ""
+# Copy static assets for standalone mode
+if [ -d ".next/standalone" ]; then
+  echo "→ Copying static assets..."
+  cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
+  cp -r public .next/standalone/ 2>/dev/null || true
+  echo "  ✓ Static assets copied"
+fi
 
+echo ""
 echo "=========================================="
 echo "  Build complete ✓"
 echo "=========================================="
