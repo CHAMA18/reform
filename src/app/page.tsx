@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SafeClientBoundary } from '@/components/safe-client-boundary';
+import ParticleBackground from '@/components/ParticleBackground';
+import { useTheme } from 'next-themes';
 
 function MaterialIcon({ name, className = '', style }: { name: string; className?: string; style?: React.CSSProperties }) {
   return (
@@ -31,8 +33,8 @@ function Reveal({ children, className = '', delay = 0 }: { children: React.React
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 mb-3">
-      <span className="h-2 w-2 rounded-full" style={{ background: '#f59e0b' }} />
-      <span className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: '#f59e0b' }}>
+      <span className="h-2 w-2 rounded-full" style={{ background: 'var(--rf-eyebrow)' }} />
+      <span className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--rf-eyebrow)' }}>
         {children}
       </span>
     </div>
@@ -43,7 +45,7 @@ function StepNumber({ num }: { num: string }) {
   return (
     <span
       className="inline-flex h-7 w-7 items-center justify-center rounded text-[11px] font-bold"
-      style={{ background: '#fef3c7', color: '#92400e' }}
+      style={{ background: 'var(--rf-chip-bg)', color: 'var(--rf-chip-fg)' }}
     >
       {num}
     </span>
@@ -52,20 +54,26 @@ function StepNumber({ num }: { num: string }) {
 
 export default function Home() {
   const router = useRouter();
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  // HYDRATION SAFETY: server + first client render use 'dark' (the default);
+  // after mount we follow the real persisted theme so dark/light toggle works.
+  useEffect(() => setMounted(true), []);
+  const isLight = mounted && resolvedTheme === 'light';
 
-  // Theme is forced to dark via the root ThemeProvider (forcedTheme="dark"),
-  // so we hardcode the dark palette here. No more conditional isDark checks.
-  const accent = '#f59e0b'; // amber/gold
+  const accent = isLight ? '#d97706' : '#f59e0b'; // amber (deeper on light for contrast)
   const accentLight = '#fef3c7';
   const accentDark = '#92400e';
   const greenStatus = '#10b981';
-  const textColor = '#f5f5f4';
-  const subtextColor = '#a8a29e';
-  const bgColor = '#0c0a09';
-  const cardBg = '#1c1917';
-  const secondaryBg = '#1c1917';
-  const borderColor = '#292524';
-  const cardShadow = 'none';
+  const textColor = isLight ? '#1c1917' : '#f5f5f4';
+  const subtextColor = isLight ? '#57534e' : '#a8a29e';
+  const bgColor = isLight ? '#fafaf9' : '#0c0a09';
+  const cardBg = isLight ? '#ffffff' : '#1c1917';
+  const secondaryBg = isLight ? '#f5f5f4' : '#1c1917';
+  const borderColor = isLight ? '#e7e5e4' : '#292524';
+  const cardShadow = isLight ? '0 16px 44px rgba(28,25,23,0.07)' : 'none';
+  const navBg = isLight ? 'rgba(250,250,249,0.85)' : 'rgba(12,10,9,0.8)';
+  const toggleTheme = () => setTheme(isLight ? 'dark' : 'light');
 
   const goToSignin = () => {
     router.push('/signin');
@@ -92,25 +100,22 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden" style={{ background: bgColor, color: textColor }}>
-      {/* === Subtle Background === */}
+      {/* === Animated Background — Three.js particle field + CSS atmosphere === */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        {/* Faint dot pattern */}
-        <div className="absolute inset-0 opacity-[0.015]"
-          style={{
-            backgroundImage: `radial-gradient(#fff 1px, transparent 1px)`,
-            backgroundSize: '24px 24px',
-          }} />
-        {/* Soft radial glow at top */}
+        <SafeClientBoundary>
+          <ParticleBackground />
+        </SafeClientBoundary>
+        {/* Soft amber radial glow keeps the warm brand tint over the field */}
         <div className="absolute inset-0"
           style={{
-            background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(245,158,11,0.06), transparent 70%)',
+            background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(245,158,11,0.05), transparent 70%)',
           }} />
       </div>
 
       {/* === Navigation === */}
       <nav className="fixed top-0 z-50 w-full border-b backdrop-blur-xl"
         style={{
-          background: 'rgba(12,10,9,0.8)',
+          background: navBg,
           borderColor,
         }}>
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
@@ -152,6 +157,11 @@ export default function Home() {
             <Link href="/docs/api" className="text-[14px] font-medium transition-colors hover:opacity-60" style={{ color: textColor }}>Docs</Link>
           </div>
           <div className="flex items-center gap-3">
+            <button onClick={toggleTheme} aria-label={isLight ? 'Switch to dark mode' : 'Switch to light mode'} title={isLight ? 'Switch to dark mode' : 'Switch to light mode'}
+              className="flex h-9 w-9 items-center justify-center rounded-full border transition-all hover:opacity-75 active:scale-95"
+              style={{ borderColor, color: subtextColor }}>
+              <MaterialIcon name={isLight ? 'dark_mode' : 'light_mode'} className="text-[17px]" />
+            </button>
             <button onClick={goToSignin} className="hidden sm:block text-[14px] font-medium transition-opacity hover:opacity-60" style={{ color: subtextColor }}>
               Sign In
             </button>
@@ -172,7 +182,7 @@ export default function Home() {
             <Reveal>
               <div>
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-medium"
-                  style={{ borderColor: '#292524', background: secondaryBg, color: subtextColor }}>
+                  style={{ borderColor, background: secondaryBg, color: subtextColor }}>
                   <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: greenStatus }} />
                   Dynamic form builder engine
                 </div>

@@ -999,3 +999,17 @@ html.light .glass-panel button:hover {
 ::-webkit-scrollbar-thumb:hover {
   background: #424656;
 }
+
+/* ===== Landing theme tokens (dark default, light overrides) ===== */
+html {
+  --rf-eyebrow: #f59e0b;
+  --rf-chip-bg: #fef3c7;
+  --rf-chip-fg: #92400e;
+  color-scheme: dark;
+}
+html.light {
+  --rf-eyebrow: #b45309;
+  --rf-chip-bg: #fef3c7;
+  --rf-chip-fg: #92400e;
+  color-scheme: light;
+}
