@@ -1,0 +1,33 @@
+{
+  "source": "ElevenLabs forced alignment",
+  "voiceAssembly": "narration.mp3 followed by bridge.mp3 with no overlap",
+  "narration": {
+    "file": "narration.mp3",
+    "duration": 170.945306,
+    "paragraphStarts": [0.100, 12.270, 25.540, 43.340, 57.990, 66.770, 88.340, 94.810, 108.870, 118.210, 133.140, 139.080, 145.590, 155.480, 155.510, 161.840]
+  },
+  "bridge": {
+    "file": "bridge.mp3",
+    "start": 170.945306,
+    "duration": 46.068390,
+    "paragraphStartsAbsolute": [171.024, 188.564, 202.965]
+  },
+  "visualScenes": [
+    {"start": 0.000, "end": 12.270, "scene": "opening card"},
+    {"start": 12.270, "end": 25.540, "scene": "premise card"},
+    {"start": 25.540, "end": 43.340, "scene": "provided dashboard recording"},
+    {"start": 43.340, "end": 57.990, "scene": "generator intro card"},
+    {"start": 57.990, "end": 66.770, "scene": "AI generator screen"},
+    {"start": 66.770, "end": 94.810, "scene": "visual builder screen"},
+    {"start": 94.810, "end": 108.870, "scene": "conversational experience screen"},
+    {"start": 108.870, "end": 118.210, "scene": "operations intro card"},
+    {"start": 118.210, "end": 133.140, "scene": "submissions screen"},
+    {"start": 133.140, "end": 145.590, "scene": "metrics screen"},
+    {"start": 145.590, "end": 155.480, "scene": "AI foundation card"},
+    {"start": 155.480, "end": 170.945, "scene": "narrated close card"},
+    {"start": 170.945, "end": 188.564, "scene": "bridge shift card"},
+    {"start": 188.564, "end": 202.965, "scene": "bridge loop card"},
+    {"start": 202.965, "end": 217.014, "scene": "bridge invitation card"},
+    {"start": 217.014, "end": 240.000, "scene": "final card"}
+  ]
+}

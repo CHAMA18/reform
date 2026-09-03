@@ -1,511 +1,488 @@
-/**
- * ReformDemo — 90-second product demo video
- *
- * Built with Remotion. Uses actual screenshots from the Reform app.
- *
- * Story arc:
- *   0-8s   : The Problem — "Every business relies on 7 tools..."
- *   8-15s  : The Solution — "One AI-native platform. Replaces all seven."
- *   15-25s : AI Form Generator — "Type a prompt. Get a form."
- *   25-35s : Dashboard — "Your entire form portfolio, at a glance."
- *   35-45s : Flowchart Builder — "Drag, connect, deploy."
- *   45-55s : Submissions + Insights — "AI summarises 200 submissions in 3 bullets."
- *   55-65s : API Keys + Developer Platform — "Full REST API. Programmatic access."
- *   65-75s : Xano Backend — "12 tables. 6 function stacks. 1 backend."
- *   75-90s : Closing — "$99/mo instead of $485. Built on Xano."
- *
- * Render with:
- *   npx remotion render ReformDemo out/reform-demo.mp4
- */
 import React from 'react';
 import {
   AbsoluteFill,
-  Img,
+  Easing,
+  Interactive,
+  Series,
   interpolate,
   spring,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
-  Sequence,
-  Easing,
-  Series,
-  interpolateColors,
 } from 'remotion';
 
-// Import screenshots
-import landingImg from './screenshots/01-landing.png';
-import signinImg from './screenshots/02-signin.png';
-import aiGeneratorImg from './screenshots/03-ai-generator.png';
-import dashboardImg from './screenshots/04-dashboard.png';
-import builderImg from './screenshots/05-builder.png';
-import submissionsImg from './screenshots/06-submissions.png';
-import apiKeysImg from './screenshots/07-api-keys.png';
-import settingsImg from './screenshots/08-settings.png';
+// ReformDemo — the marketing "demo video" (homepage embed, 180s @ 30fps).
+// Follows Remotion best practices:
+//  - assets live in public/ and are referenced via staticFile()
+//  - all animation is frame-driven (useCurrentFrame + interpolate / spring)
+//  - scene boundaries come from <Series.Sequence>, with fade-in/out derived
+//    from each sequence's own duration (no dead tail, no overflow)
+//  - individual `scale` / `translate` style props instead of transform strings
+//  - every scene is a named layer, editable in Remotion Studio
+const W = 1920;
+const H = 1080;
+const FPS = 30;
 
-// Brand colors
 const AMBER = '#f59e0b';
-const AMBER_DARK = '#d97706';
-const AMBER_DEEP = '#92400e';
-const DARK_BG = '#0c0a09';
-const DARK_SURFACE = '#1c1917';
-const WHITE = '#ffffff';
+const BG = '#0c0a09';
+const WHITE = '#f5f5f4';
 const MUTED = '#a8a29e';
+const GREEN = '#55d28c';
+const BLUE = '#3b82f6';
+const VIOLET = '#8b5cf6';
 
-// Helper: fade in + out
-const fadeInOut = (frame: number, duration: number, fadeIn = 15, fadeOut = 15) => {
-  const opacity = interpolate(
-    frame,
-    [0, fadeIn, duration - fadeOut, duration],
-    [0, 1, 1, 0],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
-  );
-  return opacity;
+const clamp = { extrapolateLeft: 'clamp' as const, extrapolateRight: 'clamp' as const };
+const easeOutCubic = Easing.out(Easing.cubic);
+
+// Fade a scene in over the first `in` frames and out over the last `out` frames.
+// `durationInFrames` is the sequence-local length, so every scene fits exactly.
+const sceneOpacity = (frame: number, inF = 12, outF = 10) => {
+  const { durationInFrames } = useVideoConfig();
+  return interpolate(frame, [0, inF, durationInFrames - outF, durationInFrames], [0, 1, 1, 0], clamp);
 };
 
-// Helper: slide in from bottom
-const slideUp = (frame: number, delay = 0, distance = 50) => {
-  const y = interpolate(frame - delay, [0, 20], [distance, 0], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-    easing: Easing.out(Easing.cubic),
-  });
-  return y;
-};
+const drive = (frame: number, at: number, dur: number) => interpolate(frame - at, [0, dur], [0, 1], {
+  ...clamp,
+  easing: easeOutCubic,
+});
 
-// Helper: scale in
-const scaleIn = (frame: number, delay = 0) => {
-  const scale = interpolate(frame - delay, [0, 25], [0.85, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-    easing: Easing.out(Easing.cubic),
-  });
-  return scale;
-};
+const asset = (name: string) => staticFile(`reform-assets/${name}`);
 
-// Screenshot dimensions: 1280x577 (actual browser viewport)
-// We'll use objectFit: 'contain' so nothing gets cropped,
-// and size the container to match the screenshot aspect ratio.
-const SCREENSHOT_W = 1280;
-const SCREENSHOT_H = 577;
-const SCREENSHOT_ASPECT = SCREENSHOT_W / SCREENSHOT_H; // ~2.218
+/* ───────────────────────────────────────────── Shared chrome ─── */
 
-// Container dimensions — fit within a 1280px max width while preserving aspect
-const CONTAINER_W = 1280;
-const CONTAINER_H = Math.round(CONTAINER_W / SCREENSHOT_ASPECT); // ~577
-
-// ============================================================================
-// SCENE COMPONENTS
-// ============================================================================
-
-// --- Scene 1: The Problem (0-8s, frames 0-240) ---
-const ProblemScene: React.FC = () => {
+const BrowserFrame: React.FC<{ url: string; children: React.ReactNode }> = ({ url, children }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-
-  const tools = [
-    { name: 'Typeform', cost: '$99', delay: 15 },
-    { name: 'Zapier', cost: '$49', delay: 30 },
-    { name: 'Airtable', cost: '$20', delay: 45 },
-    { name: 'Metabase', cost: '$85', delay: 60 },
-    { name: 'Customer.io', cost: '$150', delay: 75 },
-    { name: 'Hotjar', cost: '$32', delay: 90 },
-    { name: 'Localize', cost: '$50', delay: 105 },
-  ];
-
-  const totalCost = '$485';
-  const reformCost = '$99';
-
-  const titleOpacity = fadeInOut(frame, 240, 20, 30);
-  const totalScale = spring({ frame: frame - 140, fps, config: { damping: 12 } });
-
+  const grow = spring({ frame, fps, config: { damping: 22, stiffness: 90 }, durationInFrames: 24 });
+  const opacity = sceneOpacity(frame);
   return (
-    <AbsoluteFill style={{ backgroundColor: DARK_BG, justifyContent: 'center', alignItems: 'center' }}>
-      {/* Title */}
-      <div style={{ opacity: titleOpacity, textAlign: 'center', marginBottom: 60 }}>
-        <h1 style={{ fontSize: 64, fontWeight: 800, color: WHITE, letterSpacing: '-0.02em' }}>
-          Every business relies on <span style={{ color: AMBER }}>7 tools</span>
-        </h1>
-        <p style={{ fontSize: 28, color: MUTED, marginTop: 16 }}>
-          Form builders. Workflow engines. Dashboards. Analytics. Email. UX. Translation.
-        </p>
-      </div>
-
-      {/* Tool list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
-        {tools.map((tool, i) => {
-          const toolOpacity = fadeInOut(frame - tool.delay, 120, 10, 80);
-          const toolY = slideUp(frame, tool.delay, 30);
-          return (
-            <div
-              key={tool.name}
-              style={{
-                opacity: toolOpacity,
-                transform: `translateY(${toolY}px)`,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 32,
-                padding: '12px 40px',
-                borderRadius: 12,
-                backgroundColor: DARK_SURFACE,
-                border: '1px solid rgba(255,255,255,0.08)',
-                width: 500,
-                justifyContent: 'space-between',
-              }}
-            >
-              <span style={{ fontSize: 28, fontWeight: 600, color: WHITE }}>{tool.name}</span>
-              <span style={{ fontSize: 24, color: '#ef4444', fontWeight: 700 }}>{tool.cost}/mo</span>
-            </div>
-          );
-        })}
-
-        {/* Total cost */}
+    <AbsoluteFill name="Browser frame" style={{ opacity, justifyContent: 'center', alignItems: 'center' }}>
+      <div
+        style={{
+          width: W - 400,
+          height: H - 190,
+          borderRadius: 14,
+          overflow: 'hidden',
+          border: '1px solid #41362e',
+          background: '#131110',
+          boxShadow: '0 34px 90px rgba(0,0,0,.55)',
+          scale: `${0.96 + 0.04 * grow}`,
+        }}
+      >
         <div
           style={{
-            opacity: totalScale,
-            transform: `scale(${totalScale})`,
-            marginTop: 40,
+            height: 46,
+            background: '#24201c',
+            borderBottom: '1px solid #40362e',
             display: 'flex',
             alignItems: 'center',
-            gap: 24,
+            gap: 9,
+            padding: '0 16px',
           }}
         >
-          <span style={{ fontSize: 36, fontWeight: 700, color: MUTED }}>Total:</span>
-          <span style={{ fontSize: 64, fontWeight: 900, color: '#ef4444' }}>{totalCost}</span>
-          <span style={{ fontSize: 28, color: MUTED }}>/month</span>
-        </div>
-      </div>
-    </AbsoluteFill>
-  );
-};
-
-// --- Scene 2: The Solution (8-15s, frames 240-450) ---
-const SolutionScene: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  const titleSpring = spring({ frame: frame - 10, fps, config: { damping: 10, stiffness: 80 } });
-  const subtitleOpacity = interpolate(frame, [30, 60], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const costOpacity = interpolate(frame, [60, 90], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const xanoOpacity = interpolate(frame, [90, 120], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-
-  return (
-    <AbsoluteFill style={{ backgroundColor: DARK_BG, justifyContent: 'center', alignItems: 'center' }}>
-      {/* Flow logo animation */}
-      <div style={{ transform: `scale(${titleSpring * 1.5})`, marginBottom: 40, opacity: titleSpring }}>
-        <svg viewBox="-8 -8 80 80" width="120" height="120">
-          <defs>
-            <linearGradient id="demo-grad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#f59e0b" />
-              <stop offset="100%" stopColor="#d97706" />
-            </linearGradient>
-            <linearGradient id="demo-grad-2" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#fbbf24" />
-              <stop offset="100%" stopColor="#f59e0b" />
-            </linearGradient>
-          </defs>
-          <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#demo-grad-2)" opacity="0.45" />
-          <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#demo-grad-2)" opacity="0.75" transform="translate(2, 0)" />
-          <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#demo-grad)" transform="translate(4, 0)" />
-          <g transform="translate(32, 32)" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" fill="none">
-            <line x1="-22" y1="-10" x2="-6" y2="-10" />
-            <line x1="-22" y1="0" x2="-6" y2="0" />
-            <line x1="-22" y1="10" x2="-6" y2="10" />
-            <line x1="-6" y1="0" x2="20" y2="0" />
-            <polyline points="14,-6 22,0 14,6" fill="none" />
-          </g>
-        </svg>
-      </div>
-
-      <h1 style={{ fontSize: 80, fontWeight: 900, color: WHITE, letterSpacing: '-0.03em', opacity: titleSpring, transform: `scale(${titleSpring})`, height: 100 }}>
-        &nbsp;
-      </h1>
-
-      <p style={{ fontSize: 32, color: AMBER, marginTop: 16, opacity: subtitleOpacity, textAlign: 'center' }}>
-        One AI-native platform.<br />
-        Replaces all seven.
-      </p>
-
-      <div style={{ opacity: costOpacity, marginTop: 40, display: 'flex', alignItems: 'center', gap: 16 }}>
-        <span style={{ fontSize: 28, color: MUTED, textDecoration: 'line-through' }}>$485/mo</span>
-        <span style={{ fontSize: 28, color: MUTED }}>→</span>
-        <span style={{ fontSize: 56, fontWeight: 900, color: AMBER }}>$99</span>
-        <span style={{ fontSize: 28, color: MUTED }}>/mo</span>
-      </div>
-
-      <div style={{ opacity: xanoOpacity, marginTop: 24 }}>
-        <span style={{ fontSize: 20, fontWeight: 700, color: AMBER_DEEP, backgroundColor: 'rgba(245,158,11,0.1)', padding: '8px 24px', borderRadius: 999, border: '1px solid rgba(245,158,11,0.3)' }}>
-          ⚡ Powered by Xano
-        </span>
-      </div>
-    </AbsoluteFill>
-  );
-};
-
-// --- Generic screen showcase scene ---
-const ScreenShowcase: React.FC<{
-  img: string;
-  title: string;
-  subtitle: string;
-  feature?: string;
-  delay?: number;
-}> = ({ img, title, subtitle, feature, delay = 0 }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  const titleSpring = spring({ frame: frame - delay - 5, fps, config: { damping: 12 } });
-  const subtitleOpacity = interpolate(frame - delay, [15, 35], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const screenshotScale = interpolate(frame - delay, [10, 40], [0.8, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-    easing: Easing.out(Easing.cubic),
-  });
-  const screenshotOpacity = interpolate(frame - delay, [10, 30], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const featureBadgeSpring = spring({ frame: frame - delay - 25, fps, config: { damping: 14 } });
-
-  const exitOpacity = interpolate(frame - delay, [200, 230], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-
-  return (
-    <AbsoluteFill style={{ backgroundColor: DARK_BG, opacity: exitOpacity }}>
-      {/* Title + subtitle at top */}
-      <div style={{ position: 'absolute', top: 60, left: 0, right: 0, textAlign: 'center', opacity: titleSpring, zIndex: 10 }}>
-        {feature && (
-          <div style={{
-            display: 'inline-block',
-            padding: '6px 16px',
-            borderRadius: 999,
-            backgroundColor: 'rgba(245,158,11,0.15)',
-            border: '1px solid rgba(245,158,11,0.4)',
-            marginBottom: 16,
-            transform: `scale(${featureBadgeSpring})`,
-          }}>
-            <span style={{ fontSize: 18, fontWeight: 800, color: AMBER, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
-              {feature}
-            </span>
+          <i style={{ width: 11, height: 11, borderRadius: '50%', background: '#df705c' }} />
+          <i style={{ width: 11, height: 11, borderRadius: '50%', background: '#e5ad48' }} />
+          <i style={{ width: 11, height: 11, borderRadius: '50%', background: '#61b27d' }} />
+          <div
+            style={{
+              marginLeft: 14,
+              width: 560,
+              borderRadius: 7,
+              background: '#171411',
+              padding: '7px 14px',
+              color: '#9c9186',
+              font: '13px monospace',
+            }}
+          >
+            {url}
           </div>
-        )}
-        <h2 style={{ fontSize: 48, fontWeight: 800, color: WHITE, letterSpacing: '-0.02em', margin: 0 }}>
-          {title}
-        </h2>
-        <p style={{ fontSize: 24, color: MUTED, marginTop: 8, opacity: subtitleOpacity }}>
-          {subtitle}
-        </p>
-      </div>
-
-      {/* Screenshot */}
-      <div style={{
-        position: 'absolute',
-        top: 200,
-        left: '50%',
-        transform: `translateX(-50%) scale(${screenshotScale})`,
-        opacity: screenshotOpacity,
-        borderRadius: 16,
-        overflow: 'hidden',
-        boxShadow: '0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08)',
-        width: CONTAINER_W,
-        height: CONTAINER_H,
-      }}>
-        <Img src={img} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        </div>
+        <div style={{ width: W - 400, height: H - 236, overflow: 'hidden' }}>{children}</div>
       </div>
     </AbsoluteFill>
   );
 };
 
-// --- Xano Architecture Scene (65-75s) ---
-const XanoScene: React.FC = () => {
-  const frame = useCurrentFrame();
-
-  const stats = [
-    { label: 'Tables', value: '12', delay: 0 },
-    { label: 'Function Stacks', value: '6', delay: 15 },
-    { label: 'API Endpoints', value: '6', delay: 30 },
-    { label: 'Scheduled Tasks', value: '1', delay: 45 },
-    { label: 'Audit Log Entries', value: '8+', delay: 60 },
-  ];
-
-  const titleOpacity = fadeInOut(frame, 300, 15, 30);
-
-  return (
-    <AbsoluteFill style={{ backgroundColor: DARK_BG, justifyContent: 'center', alignItems: 'center' }}>
-      <div style={{ opacity: titleOpacity, textAlign: 'center' }}>
-        <div style={{
-          display: 'inline-block',
-          padding: '8px 24px',
-          borderRadius: 999,
-          backgroundColor: 'rgba(245,158,11,0.15)',
-          border: '1px solid rgba(245,158,11,0.4)',
-          marginBottom: 32,
-        }}>
-          <span style={{ fontSize: 22, fontWeight: 800, color: AMBER, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
-            ⚡ Xano Backend
-          </span>
-        </div>
-
-        <h2 style={{ fontSize: 56, fontWeight: 900, color: WHITE, marginBottom: 48 }}>
-          The backend is the brain
-        </h2>
-
-        <div style={{ display: 'flex', gap: 40, justifyContent: 'center' }}>
-          {stats.map((stat) => {
-            const statOpacity = fadeInOut(frame - stat.delay, 250, 10, 60);
-            const statY = slideUp(frame, stat.delay, 40);
-            return (
-              <div key={stat.label} style={{ opacity: statOpacity, transform: `translateY(${statY}px)`, textAlign: 'center' }}>
-                <div style={{ fontSize: 64, fontWeight: 900, color: AMBER }}>{stat.value}</div>
-                <div style={{ fontSize: 20, color: MUTED, marginTop: 8 }}>{stat.label}</div>
-              </div>
-            );
-          })}
-        </div>
-
-        <p style={{ fontSize: 24, color: MUTED, marginTop: 48, maxWidth: 800, lineHeight: 1.6 }}>
-          Every AI call flows through Xano function stacks.<br />
-          Every submission is stored in Xano tables.<br />
-          Every audit entry is queryable via the public REST API.
-        </p>
-      </div>
-    </AbsoluteFill>
-  );
-};
-
-// --- Closing Scene (75-90s) ---
-const ClosingScene: React.FC = () => {
+const Cursor: React.FC<{ x: number; y: number; delay?: number }> = ({ x, y, delay = 0 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-
-  const logoSpring = spring({ frame: frame - 10, fps, config: { damping: 10, stiffness: 60 } });
-  const taglineOpacity = interpolate(frame, [30, 60], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const urlOpacity = interpolate(frame, [60, 90], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const xanoOpacity = interpolate(frame, [90, 120], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-
+  const appear = spring({ frame: frame - delay, fps, config: { damping: 18, stiffness: 80 } });
+  const pulse = interpolate(frame - delay, [22, 26, 34, 46], [0, 0.9, 0.9, 0], clamp);
   return (
-    <AbsoluteFill style={{ backgroundColor: DARK_BG, justifyContent: 'center', alignItems: 'center' }}>
-      {/* Flow logo */}
-      <div style={{ transform: `scale(${logoSpring * 2})`, marginBottom: 40, opacity: logoSpring }}>
-        <svg viewBox="-8 -8 80 80" width="160" height="160">
-          <defs>
-            <linearGradient id="close-grad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#f59e0b" />
-              <stop offset="100%" stopColor="#d97706" />
-            </linearGradient>
-            <linearGradient id="close-grad-2" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#fbbf24" />
-              <stop offset="100%" stopColor="#f59e0b" />
-            </linearGradient>
-          </defs>
-          <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#close-grad-2)" opacity="0.45" />
-          <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#close-grad-2)" opacity="0.75" transform="translate(2, 0)" />
-          <rect x="0" y="0" width="64" height="64" rx="12" fill="url(#close-grad)" transform="translate(4, 0)" />
-          <g transform="translate(32, 32)" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" fill="none">
-            <line x1="-22" y1="-10" x2="-6" y2="-10" />
-            <line x1="-22" y1="0" x2="-6" y2="0" />
-            <line x1="-22" y1="10" x2="-6" y2="10" />
-            <line x1="-6" y1="0" x2="20" y2="0" />
-            <polyline points="14,-6 22,0 14,6" fill="none" />
-          </g>
-        </svg>
-      </div>
+    <>
+      <Interactive.Div
+        name="Cursor"
+        style={{
+          position: 'absolute',
+          left: x,
+          top: y,
+          translate: `${interpolate(appear, [0, 1], [-80, 0])}px ${interpolate(appear, [0, 1], [46, 0])}px`,
+          opacity: appear,
+          zIndex: 8,
+          filter: 'drop-shadow(0 2px 3px #000)',
+        }}
+      >
+        <div
+          style={{
+            width: 0,
+            height: 0,
+            borderLeft: '9px solid transparent',
+            borderRight: '9px solid transparent',
+            borderBottom: '26px solid #fff',
+            rotate: '-40deg',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            left: 6,
+            top: 3,
+            width: 0,
+            height: 0,
+            borderLeft: '5px solid transparent',
+            borderRight: '5px solid transparent',
+            borderBottom: '18px solid #201910',
+            rotate: '-40deg',
+          }}
+        />
+      </Interactive.Div>
+      <div
+        style={{
+          position: 'absolute',
+          left: x,
+          top: y,
+          width: 54,
+          height: 54,
+          translate: '-50% -50%',
+          borderRadius: '50%',
+          border: `2px solid ${AMBER}`,
+          opacity: pulse,
+          zIndex: 7,
+          boxShadow: `0 0 22px ${AMBER}`,
+        }}
+      />
+    </>
+  );
+};
 
-      <h1 style={{ fontSize: 80, fontWeight: 900, color: WHITE, letterSpacing: '-0.03em', opacity: logoSpring, transform: `scale(${logoSpring})`, height: 100 }}>
-        &nbsp;
-      </h1>
-
-      <p style={{ fontSize: 32, color: AMBER, marginTop: 24, opacity: taglineOpacity, textAlign: 'center' }}>
-        7 tools. 1 AI-native platform.<br />
-        $99/mo instead of $485.
-      </p>
-
-      <div style={{ opacity: urlOpacity, marginTop: 40 }}>
-        <span style={{ fontSize: 24, color: MUTED, fontFamily: 'monospace' }}>
-          reform-oxbp.onrender.com
-        </span>
-      </div>
-
-      <div style={{ opacity: xanoOpacity, marginTop: 24 }}>
-        <span style={{ fontSize: 18, fontWeight: 700, color: AMBER_DEEP, backgroundColor: 'rgba(245,158,11,0.1)', padding: '8px 24px', borderRadius: 999, border: '1px solid rgba(245,158,11,0.3)' }}>
-          ⚡ Built on Xano · Xano Hackathon 2026
-        </span>
+const Callout: React.FC<{ title: string; body: string; accent?: string; position?: [number, number] }> = ({
+  title,
+  body,
+  accent = AMBER,
+  position = [0, 0],
+}) => {
+  const frame = useCurrentFrame();
+  const opacity = drive(frame, 16, 20);
+  return (
+    <AbsoluteFill
+      name="Callout"
+      style={{
+        justifyContent: 'flex-end',
+        alignItems: 'flex-end',
+        padding: '0 150px 120px',
+        opacity,
+        pointerEvents: 'none',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          maxWidth: 820,
+          translate: `${position[0]}px ${position[1]}px`,
+        }}
+      >
+        <div style={{ width: 4, height: 52, borderRadius: 2, background: accent, boxShadow: `0 0 16px ${accent}` }} />
+        <div>
+          <div style={{ font: '700 26px "Space Grotesk", sans-serif', letterSpacing: '-0.01em', color: WHITE }}>
+            {title}
+          </div>
+          <div style={{ marginTop: 4, font: '17px "DM Sans", sans-serif', color: MUTED, lineHeight: 1.45 }}>{body}</div>
+        </div>
       </div>
     </AbsoluteFill>
   );
 };
 
-// ============================================================================
-// MAIN COMPOSITION
-// ============================================================================
+const ScreenImg: React.FC<{ img: string; zoom: [number, number]; pan?: [number, number] }> = ({
+  img,
+  zoom: [z0, z1],
+  pan = [0, 0],
+}) => {
+  const frame = useCurrentFrame();
+  const { durationInFrames, fps } = useVideoConfig();
+  const p = Math.min(1, frame / Math.max(1, durationInFrames - 6));
+  const z = z0 + (z1 - z0) * p;
+  return (
+    <AbsoluteFill name="Screen" style={{ background: '#050707' }}>
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          scale: String(z),
+          translate: `${pan[0]}px ${pan[1]}px`,
+        }}
+      >
+        <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+      </div>
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          opacity: 0.06,
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
+          backgroundSize: '60px 60px',
+        }}
+      />
+    </AbsoluteFill>
+  );
+};
+
+/* ───────────────────────────────────────────── Scene templates ─── */
+
+const ScreenScene: React.FC<{
+  name: string;
+  img: string;
+  url: string;
+  title: string;
+  body: string;
+  accent?: string;
+  cursor?: [number, number];
+  zoom?: [number, number];
+  calloutPosition?: [number, number];
+}> = ({ name, img, url, title, body, accent = AMBER, cursor, zoom = [1.01, 1.07], calloutPosition }) => {
+  const { fps } = useVideoConfig();
+  return (
+    <AbsoluteFill name={name} style={{ background: BG }}>
+      <BrowserFrame url={url}>
+        <ScreenImg img={img} zoom={zoom} />
+      </BrowserFrame>
+      <Callout title={title} body={body} accent={accent} position={calloutPosition} />
+      {cursor && <Cursor x={cursor[0]} y={cursor[1]} delay={fps} />}
+    </AbsoluteFill>
+  );
+};
+
+const TextScene: React.FC<{
+  name: string;
+  eyebrow: string;
+  title: string;
+  body: string;
+  fade?: boolean;
+}> = ({ name, eyebrow, title, body, fade = false }) => {
+  const frame = useCurrentFrame();
+  const opacity = fade ? sceneOpacity(frame, 18, 16) : 1;
+  const y = interpolate(frame, [0, 30], [36, 0], { ...clamp, easing: easeOutCubic });
+  return (
+    <AbsoluteFill
+      name={name}
+      style={{ background: BG, opacity, justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}
+    >
+      <div style={{ translate: `0px ${y}px`, maxWidth: 1150 }}>
+        <div style={{ color: AMBER, letterSpacing: '.24em', font: '700 17px "DM Sans", sans-serif', textTransform: 'uppercase' }}>
+          {eyebrow}
+        </div>
+        <div style={{ font: '700 74px/1.06 "Space Grotesk", sans-serif', letterSpacing: '-0.04em', margin: '26px 0 20px' }}>
+          {title}
+        </div>
+        <p style={{ color: MUTED, font: '26px/1.5 "DM Sans", sans-serif', margin: '0 auto', maxWidth: 940 }}>{body}</p>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+/* ───────────────────────────────────────────── Composition ─── */
 
 export const ReformDemo: React.FC = () => {
   return (
-    <AbsoluteFill style={{ backgroundColor: DARK_BG }}>
+    <AbsoluteFill style={{ background: BG, color: WHITE, fontFamily: '"DM Sans", sans-serif' }}>
       <Series>
-        {/* Scene 1: The Problem (0-8s) */}
-        <Series.Sequence durationInFrames={240}>
-          <ProblemScene />
-        </Series.Sequence>
-
-        {/* Scene 2: The Solution (8-15s) */}
-        <Series.Sequence durationInFrames={210}>
-          <SolutionScene />
-        </Series.Sequence>
-
-        {/* Scene 3: AI Form Generator (15-25s) */}
-        <Series.Sequence durationInFrames={300}>
-          <ScreenShowcase
-            img={aiGeneratorImg}
-            title="AI Form Generator"
-            subtitle="Type a prompt. Get a complete form in seconds."
-            feature="AI Feature #1"
+        <Series.Sequence name="Hook — title" durationInFrames={11 * FPS}>
+          <TextScene
+            name="Hook"
+            eyebrow="Reform"
+            title="The form stack, rebuilt."
+            body="Generate, design, ship, and understand every response — one platform, built on Xano."
+            fade
           />
         </Series.Sequence>
 
-        {/* Scene 4: Dashboard (25-35s) */}
-        <Series.Sequence durationInFrames={300}>
-          <ScreenShowcase
-            img={dashboardImg}
-            title="Your form portfolio"
-            subtitle="Live dashboard with submission counts and form status."
-            feature="Real-time"
+        <Series.Sequence name="Landing" durationInFrames={9 * FPS}>
+          <ScreenScene
+            name="Landing page"
+            img={asset('landing.png')}
+            url="reform-7jo8.onrender.com/"
+            title="Start with the real product"
+            body="A focused entry point for teams building better customer experiences."
+            cursor={[560, 500]}
           />
         </Series.Sequence>
 
-        {/* Scene 5: Flowchart Builder (35-45s) */}
-        <Series.Sequence durationInFrames={300}>
-          <ScreenShowcase
-            img={builderImg}
-            title="Visual Flowchart Builder"
-            subtitle="Drag, connect, deploy. No code required."
-            feature="Interactive"
+        <Series.Sequence name="Dashboard" durationInFrames={23 * FPS}>
+          <ScreenScene
+            name="Dashboard"
+            img={asset('dashboard.png')}
+            url="reform-7jo8.onrender.com/dashboard"
+            title="Everything starts here"
+            body="Forms, submissions, completion rate, and AI activity in one command center."
+            cursor={[600, 300]}
+            zoom={[1.0, 1.05]}
           />
         </Series.Sequence>
 
-        {/* Scene 6: Submissions + Insights (45-55s) */}
-        <Series.Sequence durationInFrames={300}>
-          <ScreenShowcase
-            img={submissionsImg}
-            title="AI Submission Insights"
-            subtitle="200 submissions → 3 bullets + sentiment + topics in seconds."
-            feature="AI Feature #2"
+        <Series.Sequence name="AI generator" durationInFrames={18 * FPS}>
+          <ScreenScene
+            name="AI Form Generator"
+            img={asset('ai-gen.png')}
+            url="reform-7jo8.onrender.com/forms/ai"
+            title="Describe the form in plain English"
+            body="Reform turns a prompt into a validated structure — fields, options, and logic included."
+            cursor={[640, 470]}
+            zoom={[1.02, 1.09]}
           />
         </Series.Sequence>
 
-        {/* Scene 7: API Keys (55-65s) */}
-        <Series.Sequence durationInFrames={300}>
-          <ScreenShowcase
-            img={apiKeysImg}
-            title="Full REST API"
-            subtitle="API keys, scoped permissions, programmatic access."
-            feature="Developer Platform"
+        <Series.Sequence name="Visual builder" durationInFrames={18 * FPS}>
+          <ScreenScene
+            name="Flowchart Builder"
+            img={asset('builder.png')}
+            url="reform-7jo8.onrender.com/forms/new"
+            title="See the logic, not just the UI"
+            body="The visual builder makes every branch explicit and keeps the experience editable."
+            accent={GREEN}
+            cursor={[700, 420]}
+            zoom={[1.0, 1.06]}
           />
         </Series.Sequence>
 
-        {/* Scene 8: Xano Architecture (65-75s) */}
-        <Series.Sequence durationInFrames={300}>
-          <XanoScene />
+        <Series.Sequence name="Conversational" durationInFrames={11 * FPS}>
+          <ScreenScene
+            name="Conversational form"
+            img={asset('chat.png')}
+            url="reform-7jo8.onrender.com/f/demo/chat"
+            title="Answer by conversation"
+            body="One question at a time — the AI follows the flow and captures the submission."
+            accent={BLUE}
+            zoom={[1.03, 1.08]}
+            calloutPosition={[0, -60]}
+          />
         </Series.Sequence>
 
-        {/* Scene 9: Closing (75-90s) */}
-        <Series.Sequence durationInFrames={450}>
-          <ClosingScene />
+        <Series.Sequence name="Voice" durationInFrames={10 * FPS}>
+          <ScreenScene
+            name="Voice mode"
+            img={asset('voice.png')}
+            url="reform-7jo8.onrender.com/f/demo/voice"
+            title="Answer hands-free"
+            body="Speak naturally — local transcription turns speech into structured answers."
+            accent={AMBER}
+            zoom={[1.02, 1.08]}
+            calloutPosition={[0, -60]}
+          />
+        </Series.Sequence>
+
+        <Series.Sequence name="Translation" durationInFrames={10 * FPS}>
+          <ScreenScene
+            name="Translation"
+            img={asset('translate.png')}
+            url="reform-7jo8.onrender.com/forms/demo/translate"
+            title="Every visitor, in their language"
+            body="One click translates the whole form — the visitor's language is detected automatically."
+            accent={VIOLET}
+            zoom={[1.04, 1.09]}
+            calloutPosition={[0, -60]}
+          />
+        </Series.Sequence>
+
+        <Series.Sequence name="Submissions" durationInFrames={16 * FPS}>
+          <ScreenScene
+            name="Submissions"
+            img={asset('submissions.png')}
+            url="reform-7jo8.onrender.com/submissions"
+            title="Every response becomes signal"
+            body="Inspect real submissions and move from raw answers to useful decisions."
+            accent={VIOLET}
+            cursor={[700, 400]}
+            zoom={[1.0, 1.05]}
+          />
+        </Series.Sequence>
+
+        <Series.Sequence name="Analytics" durationInFrames={12 * FPS}>
+          <ScreenScene
+            name="Drop-off analytics"
+            img={asset('analytics.png')}
+            url="reform-7jo8.onrender.com/forms/demo/analytics"
+            title="AI finds the drop-off — and the fix"
+            body="Per-field events become a readable report with concrete recommendations."
+            accent={GREEN}
+            zoom={[1.03, 1.08]}
+          />
+        </Series.Sequence>
+
+        <Series.Sequence name="API keys" durationInFrames={12 * FPS}>
+          <ScreenScene
+            name="API keys"
+            img={asset('api-keys.png')}
+            url="reform-7jo8.onrender.com/api-keys"
+            title="Built for developers too"
+            body="Scoped API keys make the same workflow programmable and secure."
+            accent={BLUE}
+            cursor={[700, 330]}
+            zoom={[1.0, 1.05]}
+          />
+        </Series.Sequence>
+
+        <Series.Sequence name="Closing statement" durationInFrames={12 * FPS}>
+          <TextScene
+            name="Closing"
+            eyebrow="One intelligent workflow"
+            title="From prompt to production signal."
+            body="Build the experience, publish it, and understand what comes back — without stitching together seven tools."
+            fade
+          />
+        </Series.Sequence>
+
+        <Series.Sequence name="End card" durationInFrames={18 * FPS}>
+          <EndCard />
         </Series.Sequence>
       </Series>
+    </AbsoluteFill>
+  );
+};
+
+const EndCard: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const appear = spring({ frame, fps, config: { damping: 18, stiffness: 70 } });
+  const mark = interpolate(appear, [0, 1], [0.82, 1], clamp);
+  const fade = sceneOpacity(frame, 20, 20);
+  return (
+    <AbsoluteFill name="End card" style={{ background: BG, opacity: fade, justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+      <div style={{ scale: String(mark), opacity: appear }}>
+        <img
+          src={asset('reform-mark.png')}
+          alt="Reform"
+          style={{ width: 132, height: 132, margin: '0 auto', display: 'block', filter: 'drop-shadow(0 0 44px rgba(245,158,11,.4))' }}
+        />
+        <div style={{ font: '700 88px/1 "Space Grotesk", sans-serif', letterSpacing: '-0.05em', marginTop: 28 }}>Reform</div>
+        <div style={{ color: AMBER, font: '600 26px "DM Sans", sans-serif', marginTop: 12 }}>
+          The operating system for better forms.
+        </div>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 34 }}>
+          <span style={{ color: AMBER, border: `1px solid ${AMBER}66`, padding: '9px 17px', borderRadius: 999, font: '600 15px "DM Sans"' }}>
+            AI-native
+          </span>
+          <span style={{ color: AMBER, border: `1px solid ${AMBER}66`, padding: '9px 17px', borderRadius: 999, font: '600 15px "DM Sans"' }}>
+            Powered by Xano
+          </span>
+        </div>
+        <div style={{ marginTop: 30, color: MUTED, font: '18px monospace' }}>reform-7jo8.onrender.com</div>
+        <div style={{ marginTop: 44, color: '#78716c', font: '600 13px "DM Sans", sans-serif', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+          Made with Remotion
+        </div>
+      </div>
     </AbsoluteFill>
   );
 };

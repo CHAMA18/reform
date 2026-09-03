@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920,height=1080">
+  <title>Reform | Hackathon Demo</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Space+Grotesk:wght@300..700&display=swap');
+
+    :root {
+      --bg: #060808; --bg2: #0a0e0c;
+      --line: #1e3229; --line2: #273d33;
+      --text: #f2f5f0; --text2: #e0e6de; --muted: #8da398; --muted2: #6b8178;
+      --amber: #f5a828; --amberLight: #ffd06a; --amberGlow: #f5a82844;
+      --mint: #6ee0a4; --mintGlow: #6ee0a444;
+      --blue: #6db8ff;
+      --coral: #ff8876;
+      --violet: #b89aff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'DM Sans', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+
+    #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; isolation: isolate; background: var(--bg); }
+
+    /* ── Backdrop (visible behind title / grid / end scenes) ─────────────── */
+    .backdrop {
+      position: absolute; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 900px 600px at 62% 32%, #0e2a1c18, transparent 60%),
+        radial-gradient(ellipse 700px 500px at 25% 75%, #0a1a1412, transparent 55%),
+        radial-gradient(ellipse 400px 300px at 80% 80%, #152a1f0a, transparent 50%),
+        linear-gradient(165deg, #060808, #0a0e0c 45%, #080c0a 70%, #060808);
+    }
+    .backdrop::before {
+      content: ""; position: absolute; inset: 0; opacity: 0.08;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 80px 80px;
+      mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 30%, transparent 80%);
+    }
+    .backdrop::after {
+      content: ""; position: absolute; inset: 0; opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E");
+    }
+    #vignette {
+      position: absolute; inset: 0; z-index: 90; pointer-events: none;
+      background: radial-gradient(ellipse 80% 75% at 50% 50%, transparent 48%, rgba(0,0,0,0.5) 100%);
+    }
+
+    /* ── Ambient ─────────────────────────────────────────────────────────── */
+    .particles { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+    .particle { position: absolute; border-radius: 50%; animation: particleFloat linear infinite; }
+    @keyframes particleFloat {
+      0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-100vh) translateX(30px) scale(0.5); opacity: 0; }
+    }
+    .ambient-orb {
+      position: absolute; border-radius: 50%; pointer-events: none; z-index: 1;
+      filter: blur(90px); opacity: 0.05; animation: orbDrift 22s ease-in-out infinite alternate;
+    }
+    @keyframes orbDrift {
+      0% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(40px, -30px) scale(1.15); }
+      66% { transform: translate(-25px, 20px) scale(0.9); }
+      100% { transform: translate(15px, -15px) scale(1.05); }
+    }
+    #sweep {
+      position: absolute; inset: -260px; z-index: 70; pointer-events: none;
+      background: linear-gradient(105deg, transparent 44%, rgba(255,255,255,0.03) 49.5%, rgba(255,255,255,0.06) 50%, transparent 55%);
+      opacity: 0; will-change: transform;
+    }
+
+    /* ── Chapter rail (title / grid / end only) ──────────────────────────── */
+    #chapter-rail {
+      position: absolute; left: 66px; top: 96px; bottom: 96px; width: 2px;
+      background: var(--line); z-index: 60; border-radius: 2px; opacity: 0; transition: opacity 0.4s ease;
+    }
+    #chapter-rail::before {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(to bottom, transparent, var(--line) 10%, var(--line) 90%, transparent);
+    }
+    #chapter-rail.on { opacity: 1; }
+    #rail-marker {
+      position: absolute; left: -3px; top: 0; width: 8px; height: 84px; border-radius: 8px;
+      background: linear-gradient(180deg, var(--amberLight), var(--amber));
+      box-shadow: 0 0 22px var(--amber), 0 0 46px var(--amberGlow);
+      transition: top 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #chapter-count {
+      position: absolute; left: 54px; top: 64px; color: #6b8178;
+      font: 600 15px 'DM Sans', monospace; letter-spacing: 0.22em; z-index: 60;
+      writing-mode: vertical-rl; opacity: 0; transition: opacity 0.4s ease;
+    }
+    #chapter-count.on { opacity: 1; }
+
+    /* ── Title scenes ────────────────────────────────────────────────────── */
+    .title-scene { position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; text-align: center; }
+    .title-inner { width: 1420px; }
+    .brandline { display: flex; align-items: center; justify-content: center; gap: 18px; margin-bottom: 46px; }
+    .brandline .logoimg { width: 60px; height: 60px; filter: drop-shadow(0 0 26px var(--amberGlow)); }
+    .brandline span { font: 600 34px 'Space Grotesk', sans-serif; letter-spacing: -0.02em; }
+    .eyebrow { color: var(--amber); font-size: 15px; letter-spacing: 0.3em; font-weight: 700; text-transform: uppercase; }
+    .card-title { margin: 26px auto 0; font: 700 84px/1.03 'Space Grotesk', sans-serif; letter-spacing: -0.055em; max-width: 1320px; }
+    .card-title .accent {
+      background: linear-gradient(135deg, var(--amberLight), var(--amber), #e89020);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .accent-line { width: 0; height: 2px; margin: 30px auto 0; background: linear-gradient(90deg, transparent, var(--amber), transparent); box-shadow: 0 0 22px var(--amberGlow); transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1); }
+    .accent-line.visible { width: 430px; }
+    .card-body { margin: 30px auto 0; color: var(--muted); font-size: 29px; line-height: 1.48; max-width: 1020px; }
+    .card-meta { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 46px; color: var(--text2); font-size: 16px; letter-spacing: 0.02em; }
+    .meta-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 18px var(--amber); animation: metaDotPulse 2.2s ease-in-out infinite; }
+    @keyframes metaDotPulse {
+      0%, 100% { box-shadow: 0 0 16px var(--amber); }
+      50% { box-shadow: 0 0 30px var(--amber), 0 0 52px var(--amberGlow); }
+    }
+
+    /* ── Media scenes: real product footage full-frame, textless ─────────── */
+    .media-scene { position: absolute; inset: 0; z-index: 10; background: #050707; opacity: 0; }
+    .shot { position: absolute; inset: 0; opacity: 0; will-change: transform, opacity; }
+    .shot img, .shot video { width: 1920px; height: 1080px; display: block; object-fit: fill; }
+    .media-scene::after {
+      content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 3;
+      background:
+        linear-gradient(to bottom, rgba(5,7,7,0.4) 0%, transparent 11%),
+        linear-gradient(to top, rgba(5,7,7,0.48) 0%, transparent 12%),
+        linear-gradient(to right, rgba(5,7,7,0.32) 0%, transparent 7%),
+        linear-gradient(to left, rgba(5,7,7,0.32) 0%, transparent 7%);
+    }
+    .media-scene .grade {
+      position: absolute; inset: 0; z-index: 4; pointer-events: none; mix-blend-mode: soft-light;
+      background: linear-gradient(135deg, rgba(245,168,40,0.05), rgba(30,90,60,0.06) 55%, rgba(20,40,90,0.06));
+    }
+
+    /* ── Grid / mosaic scenes ────────────────────────────────────────────── */
+    .grid-scene { position: absolute; inset: 0; z-index: 10; }
+    .grid-glow { position: absolute; left: 50%; top: 50%; width: 1600px; height: 720px; transform: translate(-50%, -50%); background: radial-gradient(closest-side, rgba(245,168,40,0.05), transparent 72%); }
+    .grid-head { position: absolute; left: 0; right: 0; top: 42px; text-align: center; }
+    .grid-eyebrow { color: var(--mint); font-size: 14px; letter-spacing: 0.3em; font-weight: 700; text-transform: uppercase; }
+    .grid-title { margin-top: 10px; font: 600 46px/1.08 'Space Grotesk', sans-serif; letter-spacing: -0.04em; }
+    .grid-sub { margin-top: 10px; color: var(--muted); font-size: 19px; }
+    .grid-body { position: absolute; left: 92px; right: 92px; top: 208px; display: grid; gap: 24px; }
+    .tile { display: flex; flex-direction: column; border-radius: 10px; overflow: hidden; background: #0b1210; box-shadow: 0 20px 54px rgba(0,0,0,0.5); opacity: 0; will-change: transform, opacity; }
+    .tile img { width: 100%; display: block; object-fit: cover; aspect-ratio: 16 / 9; }
+    .tile-name {
+      padding: 8px 10px 7px; background: #0e1613; border-top: 1px solid rgba(50,78,64,0.4);
+      color: #a9bcb1; font: 700 12px 'DM Sans', sans-serif; letter-spacing: 0.14em; text-transform: uppercase; text-align: center;
+    }
+
+    /* ── End scenes ──────────────────────────────────────────────────────── */
+    .end-scene { position: absolute; inset: 0; z-index: 10; }
+    .end-card, .credit-card { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; opacity: 0; }
+    .end-card .big-logo { width: 134px; height: 134px; filter: drop-shadow(0 0 44px var(--amberGlow)) drop-shadow(0 0 120px rgba(245,168,40,0.22)); }
+    .end-card h1 { margin-top: 30px; font: 700 106px/1 'Space Grotesk', sans-serif; letter-spacing: -0.06em; }
+    .end-card .endline { margin-top: 22px; font: 500 31px 'Space Grotesk', sans-serif; color: var(--text2); letter-spacing: -0.02em; }
+    .end-card .endline em { color: var(--amber); font-style: normal; }
+    .end-url {
+      margin-top: 40px; color: var(--text2); font: 500 20px 'DM Sans', monospace;
+      padding: 13px 27px; border: 1px solid var(--line2); border-radius: 999px; background: rgba(15,22,20,0.7);
+    }
+    .proof { display: flex; justify-content: center; gap: 14px; margin-top: 32px; }
+    .proof span { border: 1px solid rgba(110,224,164,0.35); color: var(--mint); background: rgba(110,224,164,0.05); padding: 11px 19px; border-radius: 999px; font-size: 15px; font-weight: 600; }
+    .end-foot { margin-top: 46px; color: var(--muted2); font-size: 14px; letter-spacing: 0.24em; text-transform: uppercase; font-weight: 600; }
+    .credit-card { background: linear-gradient(160deg, #050708, #0b0e10 55%, #050708); }
+    .credit-card .remotion-lockup { width: 570px; margin-bottom: 30px; filter: drop-shadow(0 16px 70px rgba(0,0,0,0.7)); }
+    .credit-card .credit-title { font: 600 46px 'Space Grotesk', sans-serif; letter-spacing: -0.02em; }
+    .credit-card .credit-sub { margin-top: 18px; color: var(--muted); font-size: 22px; }
+    .credit-card .credit-url { margin-top: 30px; color: #c3cfc8; font: 500 19px 'DM Sans', monospace; letter-spacing: 0.08em; border: 1px solid rgba(130,150,140,0.3); padding: 11px 24px; border-radius: 999px; background: rgba(255,255,255,0.03); }
+    .credit-card .made-with { margin-top: 16px; font-size: 13px; letter-spacing: 0.26em; color: #6b8178; text-transform: uppercase; font-weight: 600; }
+
+    /* ── Shared ──────────────────────────────────────────────────────────── */
+    .hidden { display: none !important; }
+    .fade-in { animation: fadeSlideUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+    @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="backdrop"></div>
+    <div id="vignette"></div>
+    <div id="sweep"></div>
+
+    <div class="particles" id="particles"></div>
+    <div class="ambient-orb" style="width:560px;height:560px;top:-12%;right:6%;background:var(--amber);animation-delay:0s"></div>
+    <div class="ambient-orb" style="width:460px;height:460px;bottom:-8%;left:10%;background:var(--mint);animation-delay:-8s"></div>
+    <div class="ambient-orb" style="width:400px;height:400px;top:34%;right:-6%;background:var(--blue);animation-delay:-15s"></div>
+
+    <div id="chapter-rail"><i id="rail-marker"></i></div>
+    <div id="chapter-count">01 / 18</div>
+
+    <!-- Title scene -->
+    <div id="titleScene" class="title-scene hidden">
+      <div class="title-inner">
+        <div class="brandline"><img class="logoimg" src="assets/reform-mark.png" alt="Reform"><span>Reform</span></div>
+        <div id="t-kicker" class="eyebrow"></div>
+        <div id="t-title" class="card-title"></div>
+        <div id="t-line" class="accent-line"></div>
+        <div id="t-body" class="card-body"></div>
+        <div id="t-meta" class="card-meta"><span class="meta-dot"></span><span id="t-meta-text"></span></div>
+      </div>
+    </div>
+
+    <!-- Media scene (product screens full frame) -->
+    <div id="mediaScene" class="media-scene hidden"><div class="grade"></div></div>
+
+    <!-- Grid / mosaic scene -->
+    <div id="gridScene" class="grid-scene hidden">
+      <div class="grid-glow"></div>
+      <div class="grid-head">
+        <div id="g-eyebrow" class="grid-eyebrow"></div>
+        <div id="g-title" class="grid-title"></div>
+        <div id="g-sub" class="grid-sub"></div>
+      </div>
+      <div class="grid-body" id="grid-body"></div>
+    </div>
+
+    <!-- End scene (Reform final + Remotion credit) -->
+    <div id="endScene" class="end-scene hidden">
+      <div class="end-card" id="endCard">
+        <img class="big-logo" src="assets/reform-mark.png" alt="Reform">
+        <h1>Reform</h1>
+        <div class="endline">Build the experience. <em>Understand the signal.</em><br>Move faster with one intelligent workflow.</div>
+        <div class="end-url">reform-7jo8.onrender.com</div>
+        <div class="proof"><span>AI-native</span><span>Built on Xano</span><span>Built for teams</span></div>
+        <div class="end-foot">Xano Hackathon 2026 · Reform</div>
+      </div>
+      <div class="credit-card" id="creditCard">
+        <img class="remotion-lockup" src="assets/remotion-lockup-dark.png" alt="Remotion">
+        <div class="credit-title">This video was made with Remotion</div>
+        <div class="credit-sub">Every frame — written in React, rendered programmatically.</div>
+        <div class="credit-url">remotion.dev</div>
+        <div class="made-with">Reform · Xano Hackathon 2026</div>
+      </div>
+    </div>
+  </div>
+
+<script src="assets/scenes-times.js"></script>
+<script>
+  (function initParticles() {
+    const container = document.getElementById('particles');
+    const colors = ['#f5a828', '#6ee0a4', '#6db8ff', '#ff8876', '#b89aff'];
+    for (let i = 0; i < 26; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = 1.4 + Math.random() * 2.6;
+      const x = Math.random() * 1920;
+      const y = Math.random() * 1080 + 1080;
+      const dur = 16 + Math.random() * 26;
+      const color = colors[i % colors.length];
+      p.style.cssText = `width:${size}px;height:${size}px;left:${x}px;top:${y}px;background:${color};box-shadow:0 0 ${size * 3}px ${color};animation-duration:${dur}s;animation-delay:-${Math.random() * dur}s;`;
+      container.appendChild(p);
+    }
+  })();
+
+  window.__demoReady = false;
+  window.__demoDuration = 180;
+  const A = 'assets/';
+
+  // 3-minute cut — scene boundaries are measured from the re-cut voice track
+  // (assets/voice-3min.wav, see build-voice-3min.js): each scene switches exactly
+  // when its narration line starts, so picture and voice are always in sync.
+  const SCENES = [
+    { id:'title', type:'title', start:0.000, end:12.170, eyebrow:'REFORM',
+      title:'Forms are not documents.<br><span class="accent">They are conversations.</span>',
+      body:'The first conversation between a team and the people it serves — captured, structured, and put to work.',
+      meta:'A tour of the operating system for better forms.' },
+
+    { id:'montage', type:'media', start:12.170, end:22.740, shots:[
+      { img:'ai-gen.png',       dur:2.64, move:{ z0:1.10, z1:1.0,  x0:-70, y0:-30, x1:0,   y1:0  } },
+      { img:'builder.png',      dur:2.64, move:{ z0:1.0,  z1:1.10, x0:0,   y0:0,   x1:60,  y1:-20 } },
+      { img:'chat.png',         dur:2.64, move:{ z0:1.12, z1:1.02, x0:50,  y0:24,  x1:0,   y1:0  } },
+      { img:'submissions.png',  dur:2.65, move:{ z0:1.02, z1:1.10, x0:0,   y0:0,   x1:-56, y1:26 } },
+    ]},
+
+    { id:'dashboard', type:'media', start:22.740, end:40.540, video:'first.mp4', videoStart:3.2, move:{ z0:1.0, z1:1.05, x0:0, y0:0, x1:0, y1:0 } },
+
+    { id:'gen-prompt', type:'media', start:40.540, end:55.190, shots:[
+      { img:'ai-gen.png', dur:14.65, move:{ z0:1.02, z1:1.13, x0:0, y0:0, x1:-72, y1:-34 } },
+    ]},
+
+    { id:'generator', type:'media', start:55.190, end:63.970, shots:[
+      { img:'ai-gen.png', dur:8.78, move:{ z0:1.16, z1:1.06, x0:60, y0:-40, x1:0, y1:0 } },
+    ]},
+
+    { id:'builder', type:'media', start:63.970, end:85.540, shots:[
+      { img:'builder.png', dur:10.785, move:{ z0:1.0,  z1:1.09, x0:0,  y0:0,  x1:-58, y1:-24 } },
+      { img:'builder.png', dur:10.785, move:{ z0:1.14, z1:1.04, x0:80, y0:44, x1:0,  y1:14 } },
+    ]},
+
+    { id:'chat', type:'media', start:85.540, end:99.600, shots:[
+      { img:'chat.png', dur:14.06, move:{ z0:1.05, z1:1.0, x0:-30, y0:-26, x1:0, y1:0 } },
+    ]},
+
+    { id:'voice-translate', type:'media', start:99.600, end:108.940, shots:[
+      { img:'voice.png',     dur:4.67, move:{ z0:1.12, z1:1.03, x0:54, y0:-30, x1:0,  y1:0  } },
+      { img:'translate.png', dur:4.67, move:{ z0:1.03, z1:1.12, x0:0,  y0:0,  x1:-60, y1:22 } },
+    ]},
+
+    { id:'submissions', type:'media', start:108.940, end:123.870, shots:[
+      { img:'submissions.png', dur:14.93, move:{ z0:1.02, z1:1.14, x0:0, y0:0, x1:66, y1:-38 } },
+    ]},
+
+    { id:'metrics', type:'media', start:123.870, end:129.810, shots:[
+      { img:'dashboard.png', dur:5.94, move:{ z0:1.08, z1:1.18, x0:0, y0:-40, x1:-46, y1:-64 } },
+    ]},
+
+    { id:'analytics', type:'media', start:129.810, end:136.320, shots:[
+      { img:'analytics.png', dur:6.51, move:{ z0:1.16, z1:1.05, x0:-70, y0:36, x1:0, y1:0 } },
+    ]},
+
+    { id:'mosaic', type:'grid', start:136.320, end:146.210, cols:5,
+      eyebrow:'ONE PLATFORM', title:'Every AI feature. One intelligent system.',
+      sub:'Command center · generator · visual logic · conversational · voice · translation · routing · analytics · API',
+      tiles:[
+        { img:'ai-gen.png', name:'AI generator' }, { img:'builder.png', name:'Visual builder' },
+        { img:'chat.png', name:'Conversational' }, { img:'voice.png', name:'Voice mode' },
+        { img:'translate.png', name:'Translation' }, { img:'routing.png', name:'Smart routing' },
+        { img:'submissions.png', name:'Submissions' }, { img:'analytics.png', name:'AI analytics' },
+        { img:'api-keys.png', name:'REST API' }, { img:'dashboard.png', name:'Command center' },
+      ] },
+
+    { id:'invitation', type:'media', start:146.210, end:160.258, fadeOut:0.9, shots:[
+      { img:'chat.png',      dur:4.7,  move:{ z0:1.06, z1:1.13, x0:-30, y0:-24, x1:-90, y1:-40 } },
+      { img:'translate.png', dur:4.7,  move:{ z0:1.0,  z1:1.09, x0:0,   y0:0,   x1:56,  y1:-26 } },
+      { img:'voice.png',     dur:4.648, move:{ z0:1.1, z1:1.03, x0:60, y0:32, x1:0, y1:0 } },
+    ]},
+
+    { id:'end', type:'end', start:160.258, end:180.000, creditAt:171.0 },
+  ];
+
+  // Measured scene boundaries from the voice track override the fallback times above
+  // (assets/scenes-times.js is regenerated by build-scenes-3min.js after a re-narration).
+  if (window.__SCENES_TIMES && window.__SCENES_TIMES.length) {
+    for (const s of SCENES) {
+      const t = window.__SCENES_TIMES.find((x) => x.id === s.id);
+      if (t) {
+        s.start = t.start;
+        s.end = t.end;
+        if (typeof t.creditAt === 'number') s.creditAt = t.creditAt;
+      }
+    }
+  }
+
+  const RAIL_TOP = 96, RAIL_BOTTOM = 96, MARK_H = 84;
+  let activeIndex = -1;
+  let mediaEls = [];
+  const videoEl = (() => { const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'auto'; return v; })();
+  const $ = id => document.getElementById(id);
+  const clamp01 = p => Math.max(0, Math.min(1, p));
+  const easeIO = p => { p = clamp01(p); return p * p * (3 - 2 * p); };
+  const lerp = (a, b, p) => a + (b - a) * p;
+
+  function setRail(idx, last) {
+    const span = 1080 - RAIL_TOP - RAIL_BOTTOM - MARK_H;
+    const frac = SCENES.length <= 1 ? 0 : idx / (SCENES.length - 1);
+    $('rail-marker').style.top = (RAIL_TOP + frac * span) + 'px';
+    void last;
+  }
+
+  function buildMedia(scene) {
+    const host = $('mediaScene');
+    host.querySelectorAll('.shot').forEach(el => el.remove());
+    mediaEls = [];
+    const frag = document.createDocumentFragment();
+    if (scene.video) {
+      const shot = document.createElement('div');
+      shot.className = 'shot';
+      shot.appendChild(videoEl);
+      frag.appendChild(shot);
+      mediaEls.push({ shot, media: videoEl, isVideo: true, a: 0, dur: scene.end - scene.start, move: scene.move });
+      videoEl.src = A + scene.video;
+      videoEl.muted = true;
+    } else {
+      // distribute the measured scene duration evenly across the shots so the
+      // sequence always covers the whole scene (never a dead gap after the last shot)
+      const n = scene.shots.length;
+      const dur = (scene.end - scene.start) / n;
+      let start = 0;
+      for (const s of scene.shots) {
+        const shot = document.createElement('div');
+        shot.className = 'shot';
+        const img = document.createElement('img');
+        img.src = A + s.img;
+        shot.appendChild(img);
+        frag.appendChild(shot);
+        mediaEls.push({ shot, media: img, isVideo: false, a: start, dur, move: s.move });
+        start += dur;
+      }
+    }
+    host.insertBefore(frag, host.querySelector('.grade'));
+    host.style.opacity = '0';
+  }
+
+  function buildGrid(scene) {
+    const host = $('grid-body');
+    host.innerHTML = '';
+    host.style.gridTemplateColumns = `repeat(${scene.cols}, 1fr)`;
+    scene.tiles.forEach(t => {
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      const img = document.createElement('img');
+      img.src = A + t.img;
+      const name = document.createElement('div');
+      name.className = 'tile-name';
+      name.textContent = t.name;
+      tile.appendChild(img);
+      tile.appendChild(name);
+      host.appendChild(tile);
+    });
+  }
+
+  function showScene(scene, index) {
+    const type = scene.type;
+    $('titleScene').classList.toggle('hidden', type !== 'title');
+    $('mediaScene').classList.toggle('hidden', type !== 'media');
+    $('gridScene').classList.toggle('hidden', type !== 'grid');
+    $('endScene').classList.toggle('hidden', type !== 'end');
+
+    const railOn = type !== 'media';
+    $('chapter-rail').classList.toggle('on', railOn);
+    $('chapter-count').classList.toggle('on', railOn);
+    $('chapter-count').textContent = String(index + 1).padStart(2, '0') + ' / ' + SCENES.length;
+
+    if (type === 'title') {
+      $('t-kicker').textContent = scene.eyebrow;
+      $('t-title').innerHTML = scene.title;
+      $('t-body').textContent = scene.body;
+      $('t-meta-text').textContent = scene.meta;
+      const inner = document.querySelector('#titleScene .title-inner');
+      inner.classList.remove('fade-in'); void inner.offsetWidth; inner.classList.add('fade-in');
+      setTimeout(() => $('t-line').classList.add('visible'), 300);
+    } else if (type === 'media') {
+      buildMedia(scene);
+    } else if (type === 'grid') {
+      buildGrid(scene);
+      $('g-eyebrow').textContent = scene.eyebrow;
+      $('g-title').textContent = scene.title;
+      $('g-sub').textContent = scene.sub;
+      const head = document.querySelector('#gridScene .grid-head');
+      head.classList.remove('fade-in'); void head.offsetWidth; head.classList.add('fade-in');
+    } else if (type === 'end') {
+      $('endCard').style.opacity = '0';
+      $('creditCard').style.opacity = '0';
+    }
+    if (railOn) setRail(index);
+  }
+
+  function renderMedia(t, s) {
+    const host = $('mediaScene');
+    const dur = s.end - s.start;
+    const local = Math.max(0, Math.min(dur, t - s.start)); // scene-local seconds
+
+    // hard cuts between scenes; optional gentle fade-out at a scene's end
+    let hostOp = 1;
+    if (s.fadeOut && local > dur - s.fadeOut) hostOp = 1 - easeIO((local - (dur - s.fadeOut)) / s.fadeOut);
+    host.style.opacity = String(hostOp);
+
+    const last = mediaEls.length - 1;
+    for (let i = 0; i < mediaEls.length; i++) {
+      const el = mediaEls[i];
+      const pr = easeIO(clamp01((local - el.a) / el.dur));
+      const z = lerp(el.move.z0, el.move.z1, pr);
+      const x = lerp(el.move.x0, el.move.x1, pr);
+      const y = lerp(el.move.y0, el.move.y1, pr);
+      el.shot.style.transform = `scale(${z}) translate(${x}px, ${y}px)`;
+      if (el.isVideo) {
+        el.media.currentTime = s.videoStart + clamp01(local / dur) * dur;
+        el.shot.style.opacity = '1';
+        continue;
+      }
+      const a = el.a, b = el.a + el.dur, fd = 0.42;
+      let op = 1;
+      if (local < a || local > b) {
+        op = 0; // shot not active
+      } else if (i > 0 && local < a + fd) {
+        op = (local - a) / fd; // crossfade in (previous shot is crossfading out — sum stays 1)
+      } else if (i < last && local > b - fd) {
+        op = (b - local) / fd; // crossfade out (next shot is crossfading in)
+      }
+      el.shot.style.opacity = String(op);
+    }
+  }
+
+  function renderGrid(t, s) {
+    const host = $('gridScene');
+    const dur = s.end - s.start;
+    const local = Math.max(0, Math.min(dur, t - s.start));
+    host.style.opacity = '1';
+
+    const tiles = host.querySelectorAll('.tile');
+    const p = local / dur;
+    tiles.forEach((tile, i) => {
+      const d = clamp01((p * 1.35 - i * 0.02));
+      const scale = lerp(1.06, 1, easeIO(clamp01(d * 4)));
+      tile.style.transform = `scale(${scale.toFixed(4)})`;
+      tile.style.opacity = String(easeIO(clamp01(d * 2.4)));
+    });
+  }
+
+  function renderEnd(t, s) {
+    const creditAt = s.creditAt;
+    const ec = $('endCard'), cc = $('creditCard');
+    if (t < creditAt) {
+      ec.style.opacity = String(easeIO((t - s.start) / 0.9));
+      cc.style.opacity = '0';
+    } else {
+      ec.style.opacity = String(1 - easeIO((t - creditAt) / 0.55));
+      const cIn = easeIO((t - creditAt) / 1.0);
+      cc.style.opacity = String(cIn);
+      const scale = lerp(0.95, 1, cIn);
+      cc.querySelector('.remotion-lockup').style.transform = `scale(${scale.toFixed(4)})`;
+    }
+  }
+
+  function render(t) {
+    const idx = SCENES.findIndex(s => t >= s.start && t < s.end);
+    if (idx < 0) return;
+    const s = SCENES[idx];
+    if (idx !== activeIndex) {
+      activeIndex = idx;
+      showScene(s, idx);
+    }
+    if (s.type === 'media') renderMedia(t, s);
+    else if (s.type === 'grid') renderGrid(t, s);
+    else if (s.type === 'end') renderEnd(t, s);
+    else setRail(idx);
+
+    // deterministic light sweep — only over non-media scenes
+    const sweep = $('sweep');
+    const visible = s.type !== 'media';
+    sweep.style.opacity = visible ? '0.7' : '0';
+    if (visible) {
+      const x = 1920 - ((t * 220) % (1920 + 1400)) + 700;
+      sweep.style.transform = `translateX(${x.toFixed(0)}px)`;
+    }
+  }
+
+  window.__setDemoTime = async t => {
+    const clamped = Math.max(0, Math.min(window.__demoDuration - 0.001, t));
+    render(clamped);
+    const s = SCENES.find(x => clamped >= x.start && clamped < x.end);
+    if (s && s.type === 'media' && s.video) {
+      const target = s.videoStart + Math.min(Math.max(0, clamped - s.start), s.end - s.start);
+      if (videoEl.readyState < 2 || Math.abs(videoEl.currentTime - target) > 0.02) {
+        await new Promise(resolve => {
+          let settled = false;
+          const finish = () => { if (settled) return; settled = true; videoEl.removeEventListener('seeked', finish); videoEl.removeEventListener('loadeddata', finish); resolve(); };
+          videoEl.addEventListener('seeked', finish, { once: true });
+          videoEl.addEventListener('loadeddata', finish, { once: true });
+          videoEl.currentTime = target;
+          setTimeout(finish, 250);
+        });
+      }
+    }
+  };
+
+  window.__demoReady = true;
+</script>
+</body>
+</html>

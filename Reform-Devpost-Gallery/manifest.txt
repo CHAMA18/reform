@@ -1,0 +1,14 @@
+01-cover	1920x1040 in 1920x1280	70KB	Reform — opening title from the demo film
+02-landing	1920x866 in 1920x1280	35KB	Reform — product entry
+03-dashboard	1920x1080 in 1920x1280	83KB	Command center — live forms, submissions, AI activity
+04-ai-generator	1920x1080 in 1920x1280	104KB	AI Form Generator — prompt to validated structure
+05-flowchart-builder	1920x1080 in 1920x1280	84KB	Flowchart Builder — visible logic, conditional branches
+06-conversational	1920x1080 in 1920x1280	107KB	Conversational mode — one question at a time
+07-voice	1920x1080 in 1920x1280	112KB	Voice mode — answer hands-free
+08-translation	1920x1080 in 1920x1280	132KB	Auto-translation — every visitor in their language
+09-routing	1920x1080 in 1920x1280	93KB	Smart routing — plain-English rules
+10-submissions	1920x1080 in 1920x1280	135KB	Submissions — every response becomes signal
+11-analytics	1920x1080 in 1920x1280	97KB	Drop-off analytics — AI names the problem and the fix
+12-api-keys	1920x1080 in 1920x1280	91KB	REST API keys — scoped, rotatable, for developers
+13-brand	1920x1080 in 1920x1280	32KB	Reform — end card from the demo film
+14-film-frame	1920x1040 in 1920x1280	109KB	A frame from the 3-minute cinematic

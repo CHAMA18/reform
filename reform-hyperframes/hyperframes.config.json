@@ -1,12 +1,19 @@
 {
-  "name": "Reform Demo Video",
-  "version": "2.0.0",
-  "entry": "index.html",
-  "output": "out/reform-demo.mp4",
+  "name": "Reform Hackathon Demo",
+  "version": "4.0.0",
+  "entry": "demo.html",
+  "renderer": "render-demo.js",
+  "output": "out/reform-hackathon-demo.mp4",
   "width": 1920,
   "height": 1080,
   "fps": 30,
-  "duration": 70,
+  "duration": 240,
   "codec": "h264",
-  "quality": 18
+  "quality": 14,
+  "audio": {
+    "narration": "assets/narration.mp3",
+    "bridge": "assets/bridge.mp3",
+    "music": "assets/music.mp3",
+    "musicCredit": "Technology Corporate by Aylex via Free To Use"
+  }
 }

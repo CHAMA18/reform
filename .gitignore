@@ -66,3 +66,12 @@ postgres_data/
 .xano-token
 dev.pid
 .next
+
+# generated / local-only
+reform-hyperframes/frames-demo/
+reform-hyperframes/out/
+.agents/
+skills-lock.json
+remotion/out/
+reform-hyperframes/assets/voice-3min-padded.wav
+**/voice-locked.wav
